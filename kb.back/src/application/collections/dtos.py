@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
+from src.application.access.dtos import PermissionDTO
 from src.application.articles.dtos import SLUG_PATTERN
 from src.domain.articles.types import ArticleStatus
 from src.domain.collections.vo import CollectionTarget, TargetType
@@ -57,6 +58,7 @@ class CollectionResponse(BaseModel):
     name: str = Field(description="Имя коллекции")
     slug: str = Field(description="Человекочитаемый фрагмент для URL")
     description: str | None = Field(description="Описание")
+    permissions: PermissionDTO = Field(description="Эффективные права пользователя на коллекцию")
 
 
 class CreatePlacementDTO(BaseModel):

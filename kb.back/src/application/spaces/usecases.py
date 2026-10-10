@@ -9,6 +9,7 @@ from src.application.access import (
     Resource,
     Subject,
     build_subjects_from_auth,
+    resolve_permissions,
 )
 from src.application.auth import AuthUser, PermissionDeniedError
 from src.domain.access.models import AccessGrant
@@ -19,6 +20,15 @@ from .dtos import CreateSpaceDTO, SpaceResponse, UpdateSpaceDTO
 from .repositories import SpaceRepository
 
 _OWNER_PERMISSIONS = Permission.READ | Permission.WRITE | Permission.PUBLISH | Permission.ARCHIVE
+
+
+async def _to_response(
+    space: Space, auth: AuthUser, *, grant_repository: AccessGrantRepository
+) -> SpaceResponse:
+    permissions = await resolve_permissions(
+        auth, (Resource(type="space", id=space.id),), grant_repository=grant_repository
+    )
+    return SpaceResponse.model_validate({**vars(space), "permissions": permissions})
 
 
 async def create_space(
@@ -69,7 +79,7 @@ async def create_space(
         await grant_repository.create(grant)
 
     await uow.commit()
-    return SpaceResponse.model_validate(space)
+    return SpaceResponse.model_validate({**vars(space), "permissions": _OWNER_PERMISSIONS})
 
 
 async def list_spaces(
@@ -89,7 +99,7 @@ async def list_spaces(
     spaces = await space_repository.get_by_ids(list(space_ids)) if space_ids else ()
 
     return [
-        SpaceResponse.model_validate(space)
+        await _to_response(space, auth, grant_repository=grant_repository)
         for space in sorted(spaces, key=lambda space: space.name)
         if not space.is_deleted and space.organization_id == auth.user.organization_id
     ]
@@ -109,7 +119,7 @@ async def get_space(
         space_repository=space_repository,
         grant_repository=grant_repository,
     )
-    return SpaceResponse.model_validate(space)
+    return await _to_response(space, auth, grant_repository=grant_repository)
 
 
 async def update_space(
@@ -138,7 +148,7 @@ async def update_space(
     await space_repository.update(space)
     await uow.commit()
 
-    return SpaceResponse.model_validate(space)
+    return await _to_response(space, auth, grant_repository=grant_repository)
 
 
 async def archive_space(

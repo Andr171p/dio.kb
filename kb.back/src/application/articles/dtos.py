@@ -3,6 +3,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, PositiveInt
 from pydantic.alias_generators import to_camel
 
+from src.application.access.dtos import PermissionDTO
 from src.domain.articles.types import ArticleStatus
 
 SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -86,6 +87,7 @@ class ArticleDetailResponse(BaseModel):
 
     article: ArticleResponse
     revision: ArticleRevisionResponse
+    permissions: PermissionDTO = Field(description="Эффективные права пользователя на статью")
 
 
 class ArticleSummaryResponse(BaseModel):

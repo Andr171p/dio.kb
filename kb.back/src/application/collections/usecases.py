@@ -19,7 +19,7 @@ from src.domain.collections.models import Collection, CollectionPlacement
 from src.domain.collections.ranking import rank_between
 from src.domain.collections.vo import CollectionTarget, TargetType
 
-from .access import get_accessible_collection
+from .access import get_accessible_collection, resolve_collection_permissions
 from .dtos import (
     CollectionPlacementResponse,
     CollectionResponse,
@@ -33,6 +33,19 @@ from .dtos import (
 )
 from .exceptions import CollectionTargetAlreadyPlacedError
 from .repositories import CollectionPlacementRepository, CollectionRepository
+
+
+async def _to_response(
+    collection: Collection,
+    auth: AuthUser,
+    *,
+    placement_repository: CollectionPlacementRepository,
+    grant_repository: AccessGrantRepository,
+) -> CollectionResponse:
+    permissions = await resolve_collection_permissions(
+        collection, auth, placement_repository=placement_repository, grant_repository=grant_repository
+    )
+    return CollectionResponse.model_validate({**vars(collection), "permissions": permissions})
 
 
 def _resolve_rank(placements: Sequence[CollectionPlacement], position: RelativePosition) -> str:
@@ -158,7 +171,9 @@ async def create_collection(
         )
 
     await uow.commit()
-    return CollectionResponse.model_validate(collection)
+    return await _to_response(
+        collection, auth, placement_repository=placement_repository, grant_repository=grant_repository
+    )
 
 
 async def get_collection(
@@ -177,7 +192,9 @@ async def get_collection(
         placement_repository=placement_repository,
         grant_repository=grant_repository,
     )
-    return CollectionResponse.model_validate(collection)
+    return await _to_response(
+        collection, auth, placement_repository=placement_repository, grant_repository=grant_repository
+    )
 
 
 async def update_collection(
@@ -210,7 +227,9 @@ async def update_collection(
     await collection_repository.update(collection)
     await uow.commit()
 
-    return CollectionResponse.model_validate(collection)
+    return await _to_response(
+        collection, auth, placement_repository=placement_repository, grant_repository=grant_repository
+    )
 
 
 async def archive_collection(

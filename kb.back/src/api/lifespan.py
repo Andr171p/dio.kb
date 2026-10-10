@@ -9,6 +9,7 @@ from src.application.auth import Auth
 from src.infra.ai import AiTunnelConfig, OpenAITextEmbedder, create_openai_client
 from src.infra.broker.tasks import TaskiqIndexingQueue, broker
 from src.infra.database.session import create_engine, create_session_factory
+from src.infra.links import HttpLinkPreviewFetcher
 from src.infra.qdrant import QdrantConfig, QdrantSearchChunkRepository, create_qdrant_client
 from src.infra.services.iam import SrvIamClient, SrvIamConfig
 
@@ -42,10 +43,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.embedder = embedder
     app.state.chunk_repository = chunk_repository
     app.state.indexing_queue = TaskiqIndexingQueue()
+    app.state.link_preview_fetcher = link_preview_fetcher = HttpLinkPreviewFetcher()
 
     try:
         yield
     finally:
+        await link_preview_fetcher.close()
         await broker.shutdown()
         await qdrant_client.close()
         await openai_client.close()
