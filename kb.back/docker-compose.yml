@@ -1,0 +1,9 @@
+name: dios-kb
+
+include:
+  - path: docker/postgres.docker-compose.yml
+    env_file: .env
+  - path: docker/qdrant.docker-compose.yml
+    env_file: .env
+  - path: docker/rabbitmq.docker-compose.yml
+    env_file: .env
