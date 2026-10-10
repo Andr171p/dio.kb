@@ -1,0 +1,29 @@
+@use '@shared/styles/mixins' as *;
+
+.topbar {
+  @media print {
+    display: none;
+  }
+}
+
+.hideMobile {
+  @include mobile {
+    display: none;
+  }
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: var(--reading-width);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-8);
+}
+
+.skeletonBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}

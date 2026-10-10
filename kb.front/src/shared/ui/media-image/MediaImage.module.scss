@@ -1,0 +1,20 @@
+.imagePlaceholder {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 320px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+
+.imageError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-control);
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}

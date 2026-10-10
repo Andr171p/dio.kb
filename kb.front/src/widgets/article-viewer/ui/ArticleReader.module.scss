@@ -1,0 +1,65 @@
+@use '@shared/styles/mixins' as *;
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, var(--reading-width)) var(--toc-width);
+  justify-content: center;
+  gap: var(--space-12);
+  padding: var(--space-8) var(--space-8) var(--space-16);
+
+  @media (max-width: 1280px) {
+    grid-template-columns: minmax(0, var(--reading-width));
+  }
+
+  @include mobile {
+    padding: var(--space-4) var(--space-4) var(--space-12);
+  }
+
+  @media print {
+    display: block;
+    padding: 0;
+  }
+}
+
+.aside {
+  @media (max-width: 1280px) {
+    display: none;
+  }
+}
+
+.article {
+  min-width: 0;
+}
+
+.header {
+  margin-bottom: var(--space-8);
+}
+
+.title {
+  font: var(--text-display);
+  font-size: 32px;
+  line-height: 40px;
+  letter-spacing: -0.02em;
+  overflow-wrap: break-word;
+
+  @include mobile {
+    font-size: 26px;
+    line-height: 34px;
+  }
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--space-2);
+  margin-top: var(--space-3);
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.summary {
+  margin-top: var(--space-5);
+  font: var(--text-lead);
+  color: var(--color-text-secondary);
+}

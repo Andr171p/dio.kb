@@ -3,6 +3,8 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
+from src.application.access.dtos import PermissionDTO
+
 SPACE_KEY_PATTERN = r"^[A-Z][A-Z0-9_]{1,31}$"
 
 
@@ -36,3 +38,4 @@ class SpaceResponse(BaseModel):
     name: str = Field(description="Название")
     description: str | None = Field(description="Описание")
     created_by: UUID = Field(description="Создатель")
+    permissions: PermissionDTO = Field(description="Эффективные права пользователя на пространство")

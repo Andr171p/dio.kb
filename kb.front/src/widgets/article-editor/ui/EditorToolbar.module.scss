@@ -1,0 +1,123 @@
+@use '@shared/styles/mixins' as *;
+
+// Плавающая панель редактора — одно из трёх мест со стеклом
+.toolbar {
+  z-index: 30;
+  padding: 4px;
+  border-radius: var(--radius-card);
+  @include glass(true);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tool {
+  @include reset-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition:
+    background-color var(--transition),
+    color var(--transition);
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring(-1px);
+  }
+}
+
+.active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-icon);
+
+  &:hover {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-icon);
+  }
+}
+
+.danger:hover {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.separator {
+  width: 1px;
+  height: 18px;
+  margin: 0 3px;
+  background: var(--glass-border);
+}
+
+.linkEditor {
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+}
+
+.linkForm {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.linkInput {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  font: var(--text-control);
+
+  &::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.suggestions {
+  margin: 4px 0 0;
+  padding: 4px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--glass-border);
+}
+
+.suggestion {
+  @include reset-button;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 6px var(--space-2);
+  border-radius: var(--radius-sm);
+  font: var(--text-control);
+  color: var(--color-text-secondary);
+
+  span {
+    @include truncate;
+  }
+
+  svg {
+    flex: none;
+    color: var(--color-text-tertiary);
+  }
+}
+
+.suggestionActive {
+  background: var(--color-surface-active);
+  color: var(--color-text);
+}

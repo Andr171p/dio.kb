@@ -1,0 +1,60 @@
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--topbar-height);
+  padding: 0 var(--space-6);
+  border-bottom: 1px solid transparent;
+  background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  @media (max-width: 900px) {
+    padding: 0 var(--space-3);
+  }
+}
+
+.start {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.end {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Разделитель появляется, когда страницу прокрутили (scroll-driven animation) */
+@supports (animation-timeline: scroll()) {
+  .topbar {
+    animation: reveal-border linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 24px;
+  }
+}
+
+@keyframes reveal-border {
+  to {
+    border-bottom-color: var(--color-border);
+  }
+}
+
+// На узком экране место — у действий; путь виден в навигации
+@media (max-width: 600px) {
+  .start nav {
+    display: none;
+  }
+
+  .end {
+    gap: var(--space-1);
+  }
+}

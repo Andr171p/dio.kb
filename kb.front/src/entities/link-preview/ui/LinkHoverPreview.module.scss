@@ -1,0 +1,37 @@
+.anchor {
+  display: inline;
+}
+
+.card {
+  position: fixed;
+  width: 360px;
+  max-width: calc(100vw - 16px);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-elevated);
+  color: var(--color-text);
+  box-shadow: var(--shadow-popover);
+  font: var(--text-control);
+  text-align: left;
+  white-space: normal;
+
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity var(--transition),
+    transform var(--transition),
+    overlay var(--transition) allow-discrete,
+    display var(--transition) allow-discrete;
+
+  &:popover-open {
+    opacity: 1;
+    transform: none;
+
+    @starting-style {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}

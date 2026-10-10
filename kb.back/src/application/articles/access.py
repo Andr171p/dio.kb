@@ -2,7 +2,13 @@ from uuid import UUID
 
 from ddf.application.exceptions import NotFoundError
 
-from src.application.access import AccessGrantRepository, Permission, Resource, ensure_access
+from src.application.access import (
+    AccessGrantRepository,
+    Permission,
+    Resource,
+    ensure_access,
+    resolve_permissions,
+)
 from src.application.auth.dtos import AuthUser
 from src.domain.articles.models import Article
 
@@ -25,9 +31,20 @@ async def get_accessible_article(
     if article is None or article.organization_id != auth.user.organization_id:
         raise NotFoundError(f"Article with ID {article_id} not found.")
 
-    resources = (Resource(type="space", id=article.space_id), Resource(type="article", id=article.id))
-    await ensure_access(auth, resources, required, grant_repository=grant_repository)
+    await ensure_access(auth, article_resources(article), required, grant_repository=grant_repository)
     return article
 
 
-__all__ = ["get_accessible_article"]
+def article_resources(article: Article) -> tuple[Resource, ...]:
+    """Цепочка ресурсов, права на которые действуют на статью."""
+
+    return Resource(type="space", id=article.space_id), Resource(type="article", id=article.id)
+
+
+async def resolve_article_permissions(
+    article: Article, auth: AuthUser, *, grant_repository: AccessGrantRepository
+) -> Permission:
+    return await resolve_permissions(auth, article_resources(article), grant_repository=grant_repository)
+
+
+__all__ = ["article_resources", "get_accessible_article", "resolve_article_permissions"]

@@ -12,7 +12,7 @@ from src.application.spaces.repositories import SpaceRepository
 from src.domain.articles import logic
 from src.domain.articles.models import Article, ArticleRevision
 
-from .access import get_accessible_article
+from .access import get_accessible_article, resolve_article_permissions
 from .dtos import (
     ArticleDetailResponse,
     ArticleResponse,
@@ -27,10 +27,17 @@ from .dtos import (
 from .repositories import ArticleQueryRepository, ArticleRepository, ArticleRevisionRepository
 
 
-def _to_detail(article: Article, revision: ArticleRevision) -> ArticleDetailResponse:
+async def _to_detail(
+    article: Article,
+    revision: ArticleRevision,
+    auth: AuthUser,
+    *,
+    grant_repository: AccessGrantRepository,
+) -> ArticleDetailResponse:
     return ArticleDetailResponse(
         article=ArticleResponse.model_validate(article),
         revision=ArticleRevisionResponse.model_validate(revision),
+        permissions=await resolve_article_permissions(article, auth, grant_repository=grant_repository),
     )
 
 
@@ -83,7 +90,7 @@ async def create_article(
     await revision_repository.create(revision)
     await uow.commit()
 
-    return _to_detail(article, revision)
+    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
 
 
 async def list_space_articles(
@@ -142,7 +149,7 @@ async def get_published_article(
         article.published_revision_id,
         revision_repository=revision_repository,
     )
-    return _to_detail(article, revision)
+    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
 
 
 async def get_published_article_by_slug(
@@ -188,7 +195,7 @@ async def get_article_draft(
     revision = await _read_revision(
         article, article.current_revision_id, revision_repository=revision_repository
     )
-    return _to_detail(article, revision)
+    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
 
 
 async def list_article_revisions(
@@ -265,7 +272,7 @@ async def revise_article(
     await article_repository.update(article)
     await uow.commit()
 
-    return _to_detail(article, revision)
+    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
 
 
 async def restore_article_revision(
@@ -303,7 +310,7 @@ async def restore_article_revision(
     await article_repository.update(article)
     await uow.commit()
 
-    return _to_detail(article, revision)
+    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
 
 
 async def publish_article(

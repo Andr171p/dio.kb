@@ -1,0 +1,222 @@
+@use '@shared/styles/mixins' as *;
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-8) var(--space-16);
+
+  @include mobile {
+    padding: var(--space-4) var(--space-4) var(--space-12);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.headerText {
+  min-width: 0;
+}
+
+.title {
+  font: var(--text-display);
+  letter-spacing: -0.02em;
+}
+
+.description {
+  margin-top: 2px;
+  font: 400 14px/22px var(--font-text);
+  color: var(--color-text-secondary);
+}
+
+.key {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.search {
+  position: relative;
+  max-width: 520px;
+  margin: var(--space-6) 0 var(--space-8);
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-3);
+  color: var(--color-text-tertiary);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-3) 0 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-paper);
+  font: 400 14px/20px var(--font-text);
+
+  &::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  &:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  &:focus-visible {
+    border-color: var(--color-focus);
+    outline: none;
+  }
+}
+
+.section + .section {
+  margin-top: var(--space-10);
+}
+
+.sectionTitle {
+  margin-bottom: var(--space-3);
+  @include section-label;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-3);
+}
+
+.collection {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+}
+
+.collectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.collectionIcon {
+  flex: none;
+  color: var(--color-accent-icon);
+}
+
+.collectionTitle {
+  flex: 1;
+  min-width: 0;
+  font: var(--text-subtitle);
+  @include truncate;
+}
+
+.collectionCount {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.collectionEmpty {
+  font: var(--text-caption);
+  color: var(--color-text-disabled);
+}
+
+.collectionList {
+  display: flex;
+  flex-direction: column;
+  margin: 0 calc(-1 * var(--space-2));
+  padding: 0;
+  list-style: none;
+}
+
+.collectionItem {
+  @include reset-button;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 30px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font: 400 14px/20px var(--font-text);
+  text-decoration: none;
+
+  svg {
+    flex: none;
+    color: var(--color-text-tertiary);
+  }
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring(-2px);
+  }
+}
+
+.itemTitle {
+  flex: 1;
+  min-width: 0;
+  @include truncate;
+}
+
+.draft {
+  flex: none;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.more {
+  @include reset-button;
+  margin-top: var(--space-2);
+  font: var(--text-caption);
+  color: var(--color-accent-text);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.list {
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-control);
+  color: inherit;
+  font: 500 14px/20px var(--font-text);
+  text-decoration: none;
+
+  svg {
+    flex: none;
+    color: var(--color-text-tertiary);
+  }
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring(-2px);
+  }
+}
