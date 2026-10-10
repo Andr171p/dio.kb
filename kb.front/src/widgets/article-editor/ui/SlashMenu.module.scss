@@ -1,0 +1,70 @@
+@use '@shared/styles/mixins' as *;
+
+// Меню монтируется в body: свой слой, иначе его перекроет основная область (z-index: 1)
+.menu {
+  position: relative;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 300px;
+  max-height: 340px;
+  padding: var(--space-1);
+  overflow-y: auto;
+  border-radius: var(--radius-card);
+  @include glass(true);
+  @include thin-scrollbar;
+}
+
+.item {
+  @include reset-button;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 6px var(--space-2);
+  border-radius: var(--radius-control);
+}
+
+.active {
+  background: var(--color-surface-active);
+
+  .icon {
+    border-color: var(--color-accent-soft-border);
+    color: var(--color-accent-icon);
+  }
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-elevated);
+  color: var(--color-text-secondary);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title {
+  font: var(--text-control);
+}
+
+.description {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+  @include truncate;
+}
+
+.empty {
+  padding: var(--space-3);
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}

@@ -1,0 +1,237 @@
+@use '@shared/styles/mixins' as *;
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-8) var(--space-16);
+
+  @include mobile {
+    padding: var(--space-4) var(--space-4) var(--space-12);
+  }
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-8) 0 var(--space-10);
+}
+
+.title {
+  font: var(--text-display);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin-top: var(--space-2);
+  font: var(--text-lead);
+  color: var(--color-text-secondary);
+}
+
+.search {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  margin-top: var(--space-6);
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-4);
+  color: var(--color-text-tertiary);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 52px;
+  padding: 0 var(--space-4) 0 calc(var(--space-4) + 28px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+  font: 400 15px/24px var(--font-text);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+
+  &::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  &:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  &:focus-visible {
+    border-color: var(--color-focus);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
+  }
+}
+
+.section {
+  min-width: 0;
+
+  & + & {
+    margin-top: var(--space-10);
+  }
+}
+
+.sectionTitle {
+  margin-bottom: var(--space-3);
+  @include section-label;
+}
+
+.spaces {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-3);
+}
+
+.spaceCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 132px;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--transition),
+    transform var(--transition);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    @include focus-ring(2px);
+  }
+}
+
+.spaceHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.spaceTitles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.spaceName {
+  font: var(--text-subtitle);
+  @include truncate;
+}
+
+.spaceKey {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.spaceDescription {
+  flex: 1;
+  font: 400 13px/19px var(--font-text);
+  color: var(--color-text-secondary);
+  @include line-clamp(2);
+}
+
+.spaceMeta {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-8);
+  margin-top: var(--space-10);
+
+  .section + .section {
+    margin-top: 0;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+
+    .section + .section {
+      margin-top: var(--space-6);
+    }
+  }
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  overflow: hidden;
+
+  li + li {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--transition);
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring(-2px);
+  }
+}
+
+.listIcon {
+  flex: none;
+  color: var(--color-text-tertiary);
+}
+
+.listText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.listTitle {
+  font: 500 14px/20px var(--font-text);
+  @include truncate;
+}
+
+.listMeta {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+  @include truncate;
+}
+
+.listSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.muted {
+  color: var(--color-text-tertiary);
+}

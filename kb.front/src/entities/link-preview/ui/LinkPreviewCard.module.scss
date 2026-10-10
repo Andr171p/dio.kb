@@ -1,0 +1,108 @@
+@use '@shared/styles/mixins' as *;
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.columns {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.textColumn {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+  @include truncate;
+
+  svg {
+    flex: none;
+  }
+}
+
+.favicon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.title {
+  font: 600 14px/20px var(--font-text);
+  color: var(--color-text);
+  @include line-clamp(2);
+}
+
+.url {
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+  word-break: break-all;
+}
+
+.number {
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+}
+
+.text {
+  font: 400 13px/19px var(--font-text);
+  color: var(--color-text-secondary);
+  @include line-clamp(2);
+}
+
+.image {
+  flex: none;
+  align-self: center;
+  width: 120px;
+  height: 72px;
+  border-radius: var(--radius-control);
+  object-fit: cover;
+  background: var(--color-surface);
+}
+
+.skeleton {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 0%,
+    var(--color-surface-hover) 50%,
+    var(--color-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+.skeletonMeta {
+  width: 30%;
+}
+
+.skeletonTitle {
+  width: 70%;
+  height: 16px;
+}
+
+.skeletonText {
+  width: 90%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

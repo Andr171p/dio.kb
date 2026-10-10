@@ -1,0 +1,15 @@
+.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  height: 100%;
+  color: var(--color-text-tertiary);
+}
+
+.error {
+  max-width: 320px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}

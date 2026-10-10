@@ -1,0 +1,32 @@
+.anchor {
+  display: inline-flex;
+}
+
+.tooltip {
+  position: fixed;
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  max-width: 240px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: var(--text-caption);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-popover);
+
+  opacity: 0;
+  transition:
+    opacity var(--transition),
+    overlay var(--transition) allow-discrete,
+    display var(--transition) allow-discrete;
+
+  &:popover-open {
+    opacity: 1;
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}

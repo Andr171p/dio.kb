@@ -1,0 +1,98 @@
+@use '@shared/styles/mixins' as *;
+@use '@shared/styles/prose' as *;
+
+.content {
+  @include prose;
+
+  :global(.task-list-item) input[type='checkbox'] {
+    margin-top: 0.38em;
+    cursor: default;
+  }
+}
+
+.heading {
+  position: relative;
+
+  &:hover .anchor,
+  .anchor:focus-visible {
+    opacity: 1;
+  }
+}
+
+.anchor {
+  display: inline-flex;
+  margin-left: var(--space-2);
+  vertical-align: middle;
+  color: var(--color-text-tertiary) !important;
+  text-decoration: none !important;
+  opacity: 0;
+  transition: opacity var(--transition);
+
+  &:hover {
+    color: var(--color-accent-text) !important;
+  }
+}
+
+.codeBlock {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-code);
+
+  pre {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+.codeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 34px;
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.codeLanguage {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.codeCopy {
+  @include reset-button;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring(-1px);
+  }
+}
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  @include thin-scrollbar;
+
+  table {
+    border-style: hidden;
+  }
+}
+
+.linkCard {
+  max-width: 600px;
+}

@@ -1,0 +1,246 @@
+@use '@shared/styles/mixins' as *;
+
+.sidebar {
+  position: fixed;
+  top: var(--sidebar-inset);
+  bottom: var(--sidebar-inset);
+  left: var(--sidebar-inset);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  border-radius: var(--radius-panel);
+  @include glass;
+  transition:
+    transform var(--transition-slow),
+    opacity var(--transition-slow);
+
+  @include mobile {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+    transform: translateX(calc(-100% - 16px));
+    @include glass(true);
+  }
+}
+
+.collapsed {
+  transform: translateX(calc(-100% - 2 * var(--sidebar-inset)));
+  opacity: 0;
+  pointer-events: none;
+
+  @include mobile {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.mobileOpen {
+  @include mobile {
+    transform: none;
+  }
+}
+
+.scrim {
+  display: none;
+
+  @include mobile {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: block;
+    background: var(--color-backdrop);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-slow);
+  }
+}
+
+.scrimVisible {
+  @include mobile {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-2) var(--space-4);
+}
+
+.logo {
+  display: inline-flex;
+  min-width: 0;
+  padding: 4px 0;
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.collapseButton {
+  color: var(--color-text-tertiary);
+}
+
+.searchTrigger {
+  @include reset-button;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-1) var(--space-3) var(--space-2);
+  height: 34px;
+  padding: 0 6px 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--color-canvas) 55%, transparent);
+  color: var(--color-text-tertiary);
+  transition:
+    border-color var(--transition),
+    color var(--transition);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    color: var(--color-text-secondary);
+  }
+
+  &:focus-visible {
+    @include focus-ring(1px);
+  }
+}
+
+.searchLabel {
+  flex: 1;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 var(--space-2);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition:
+    background-color var(--transition),
+    color var(--transition);
+
+  svg {
+    flex: none;
+    color: var(--color-text-tertiary);
+  }
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring(-2px);
+  }
+}
+
+.navActive {
+  background: var(--color-surface-active);
+  color: var(--color-text);
+
+  svg {
+    color: var(--color-text);
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-4);
+  padding: 0 var(--space-2) var(--space-1) var(--space-5);
+  min-height: 30px;
+}
+
+.sectionLabel {
+  @include section-label;
+}
+
+.tree {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-2);
+  overflow-y: auto;
+  list-style: none;
+  @include thin-scrollbar;
+}
+
+.treeSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+
+.treeMessage {
+  padding: var(--space-2) var(--space-3);
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.retry {
+  @include reset-button;
+  color: var(--color-accent-text);
+  text-decoration: underline;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-top: 1px solid var(--glass-border);
+}
+
+.user {
+  @include reset-button;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 6px var(--space-2);
+  border-radius: var(--radius-control);
+  transition: background-color var(--transition);
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring(-2px);
+  }
+}
+
+.userText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.userName {
+  @include truncate;
+}
+
+.userEmail {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+  @include truncate;
+}
