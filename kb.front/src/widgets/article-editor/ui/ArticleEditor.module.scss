@@ -2,40 +2,28 @@
 @use '@shared/styles/prose' as *;
 
 .page {
-  max-width: calc(var(--reading-width) + 2 * var(--space-12));
-  margin: 0 auto;
-  padding: var(--space-8) var(--space-12) 160px;
+  @include page-container;
+  padding-top: 29px;
+  padding-bottom: var(--space-16);
 
   @include mobile {
-    padding: var(--space-4) var(--space-4) 120px;
+    padding-top: var(--space-5);
   }
 }
 
-.hideMobile {
-  @media (max-width: 1280px) {
-    display: none;
-  }
-}
-
-.saveState {
-  font: var(--text-caption);
-  color: var(--color-text-tertiary);
+.state {
+  margin-right: var(--space-2);
+  font: 600 14px/1.5 var(--font-ui);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 
-  @media (max-width: 1100px) {
+  @include mobile {
     display: none;
   }
 }
 
-.saveStateDirty::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-right: 6px;
-  border-radius: 50%;
-  background: var(--color-warning);
-  vertical-align: middle;
+.stateDraft {
+  color: var(--color-warning);
 }
 
 .split {
@@ -45,22 +33,35 @@
 .splitMain {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+
+  @include mobile {
+    border-radius: var(--radius-control);
+  }
+
+  @include mobile {
+    min-width: 0;
+  }
 }
 
 .splitToggle {
   @include reset-button;
+
+  @include mobile {
+    display: none !important;
+  }
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: var(--control-height-sm);
-  border-left: 1px solid var(--color-border-strong);
+  width: 32px;
+  height: var(--control-height);
+  border: 1px solid var(--color-border);
+  border-left: 0;
   border-radius: 0 var(--radius-control) var(--radius-control) 0;
   background: var(--color-surface);
   color: var(--color-text-secondary);
 
   &:hover:not(:disabled) {
-    background: var(--color-surface-hover);
     color: var(--color-text);
   }
 
@@ -90,16 +91,48 @@
   }
 }
 
+/* Предупреждение о неопубликованных изменениях: 56 px, тёплый фон */
+.band {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  margin-top: 0;
+  padding: 12px 20px;
+  border-radius: var(--radius-control);
+  background: var(--color-warning-soft);
+  font: 400 15px/1.5 var(--font-ui);
+  color: var(--color-warning);
+}
+
+.notice {
+  max-width: none;
+  margin-bottom: 23px;
+}
+
+/* Документ сдвинут на 40 px: так поля редактирования читаются отдельно от шапки */
+.document {
+  max-width: 930px;
+  margin-top: 40px;
+  padding-left: 40px;
+
+  &[hidden] {
+    display: none;
+  }
+
+  @include mobile {
+    margin-top: var(--space-8);
+    padding-left: 0;
+  }
+}
+
 .title {
   display: block;
   width: 100%;
   padding: 0;
   border: 0;
   background: transparent;
-  font: var(--text-display);
-  font-size: 32px;
-  line-height: 40px;
-  letter-spacing: -0.02em;
+  font: var(--text-page-title);
+  color: var(--color-text);
   resize: none;
   field-sizing: content;
   overflow: hidden;
@@ -113,20 +146,26 @@
   }
 
   @include mobile {
-    font-size: 26px;
-    line-height: 34px;
+    font-size: 28px;
   }
+}
+
+.summaryLabel {
+  display: block;
+  margin-top: 21px;
+  @include section-label;
 }
 
 .summary {
   display: block;
   width: 100%;
-  margin-top: var(--space-3);
+  max-width: 740px;
+  margin-top: 14px;
   padding: 0;
   border: 0;
   background: transparent;
-  font: var(--text-lead);
-  color: var(--color-text-secondary);
+  font: 400 17px/1.6 var(--font-text);
+  color: var(--color-text-body);
   resize: none;
   field-sizing: content;
   overflow: hidden;
@@ -142,12 +181,15 @@
 
 .editorArea {
   position: relative;
-  margin-top: var(--space-8);
-  padding-top: var(--space-6);
+  max-width: 900px;
+  margin-top: 24px;
+  padding-top: 25px;
   border-top: 1px solid var(--color-border);
 }
 
 .content {
+  margin-top: 36px;
+
   :global(.ProseMirror) {
     min-height: 360px;
     outline: none;
@@ -158,7 +200,7 @@
       content: attr(data-placeholder);
       float: left;
       height: 0;
-      color: var(--color-text-disabled);
+      color: var(--color-text-secondary);
       pointer-events: none;
     }
 
@@ -181,11 +223,6 @@
       @include thin-scrollbar;
     }
 
-    // Чеклист TipTap
-    ul[data-type='taskList'] li > label input {
-      margin-top: 0.38em;
-    }
-
     // Узел, выделенный целиком (картинка, разделитель)
     :global(.ProseMirror-selectednode) {
       outline: 2px solid var(--color-focus);
@@ -200,7 +237,7 @@
     // Активный ввод «/команды»
     :global(.suggestion) {
       border-radius: 4px;
-      background: var(--color-surface);
+      background: var(--color-surface-muted);
     }
   }
 }
@@ -219,7 +256,7 @@
     color var(--transition);
 
   &:hover {
-    background: var(--color-surface-hover);
+    background: var(--color-surface-active);
     color: var(--color-text-secondary);
   }
 
@@ -228,19 +265,50 @@
   }
 }
 
-.footer {
-  position: fixed;
-  right: var(--space-4);
-  bottom: var(--space-4);
-  z-index: 10;
-  padding: 4px var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-round);
-  background: var(--color-elevated);
-  font: var(--text-caption);
-  color: var(--color-text-tertiary);
+.preview {
+  max-width: 780px;
+  margin-top: 47px;
+  padding-left: 40px;
+  @include prose;
 
-  @media (max-width: 1280px) {
-    display: none;
+  @include mobile {
+    padding-left: 0;
   }
+}
+
+.previewTitle {
+  font: var(--text-display) !important;
+}
+
+.previewSummary {
+  padding: 18px 24px;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-muted);
+  font: var(--text-summary);
+}
+
+.previewSummaryLabel {
+  margin-bottom: 8px;
+  font: 600 14px/1.5 var(--font-ui);
+  color: var(--color-text);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  margin-top: 72px;
+  padding-top: 11px;
+  border-top: 1px solid var(--color-border);
+}
+
+.saveState {
+  font: var(--text-meta);
+  color: var(--color-text-secondary);
+}
+
+.previewButton {
+  min-width: 174px;
 }

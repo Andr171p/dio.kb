@@ -1,11 +1,11 @@
 .skeleton {
   display: block;
-  border-radius: 6px;
+  border-radius: 5px;
   background: linear-gradient(
     90deg,
-    var(--color-surface) 0%,
-    var(--color-surface-hover) 50%,
-    var(--color-surface) 100%
+    var(--color-surface-muted) 0%,
+    color-mix(in srgb, var(--color-surface-muted) 50%, var(--color-canvas)) 50%,
+    var(--color-surface-muted) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;

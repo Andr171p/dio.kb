@@ -13,7 +13,25 @@ export const routes = {
     `/articles/${articleId}${anchor ? `#${anchor}` : ''}`,
   editArticle: (articleId: string) => `/articles/${articleId}/edit`,
   articleHistory: (articleId: string) => `/articles/${articleId}/history`,
+  articleFocus: (articleId: string) => `/articles/${articleId}/focus`,
+  recent: () => '/recent',
+  access: (resource: AccessTarget) => {
+    switch (resource.type) {
+      case 'space':
+        return `/spaces/${resource.id}/access`;
+      case 'collection':
+        return `/spaces/${resource.spaceId}/collections/${resource.id}/access`;
+      case 'article':
+        return `/articles/${resource.id}/access`;
+    }
+  },
 };
+
+/** Ресурс, доступом к которому управляют на отдельной странице. */
+export type AccessTarget =
+  | { type: 'space'; id: string }
+  | { type: 'collection'; id: string; spaceId: string }
+  | { type: 'article'; id: string };
 
 const ARTICLE_PATH = /^\/articles\/([0-9a-f-]{36})\/?$/i;
 

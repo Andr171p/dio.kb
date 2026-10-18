@@ -1,13 +1,13 @@
 import clsx from 'clsx';
-import { FileText, Globe, Ticket } from 'lucide-react';
+import { ArrowRight, Globe, Ticket } from 'lucide-react';
 import { useState } from 'react';
 import type { LinkPreview } from '../model/types';
 import styles from './LinkPreviewCard.module.scss';
 
 const ARTICLE_STATUS_LABELS = {
-  draft: 'черновик',
-  published: 'опубликована',
-  archived: 'в архиве',
+  draft: 'Черновик',
+  published: 'Статья базы знаний',
+  archived: 'В архиве',
 } as const;
 
 const TICKET_STATUS_LABELS: Record<string, string> = {
@@ -71,17 +71,18 @@ export function LinkPreviewBody({
     );
   }
 
+  // Внутренняя ссылка: заголовок, «Коротко» и переход — как в макете превью
   if (preview.kind === 'article') {
     return (
-      <div className={styles.body}>
-        <span className={styles.meta}>
-          <FileText size={13} aria-hidden />
-          Статья базы знаний · {ARTICLE_STATUS_LABELS[preview.status]}
-        </span>
+      <div className={clsx(styles.body, styles.article)}>
         <span className={styles.title}>{preview.title}</span>
         {preview.summary && (
           <span className={styles.text}>{preview.summary}</span>
         )}
+        <span className={styles.open}>
+          {ARTICLE_STATUS_LABELS[preview.status]} · Открыть
+          <ArrowRight size={13} aria-hidden />
+        </span>
       </div>
     );
   }

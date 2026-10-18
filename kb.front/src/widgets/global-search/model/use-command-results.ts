@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   loadSpaceArticles,
+  useRecentArticles,
   useSpaceArticles,
   type ArticleSummary,
 } from '@entities/article';
@@ -8,7 +9,6 @@ import { markdownToSnippet, searchArticles } from '@entities/search';
 import { useSpaces } from '@entities/space';
 import { isAbortError } from '@shared/api';
 import { useDebouncedValue } from '@shared/lib/hooks';
-import { useRecentArticles } from './recent-store';
 
 export interface CommandArticle {
   id: string;

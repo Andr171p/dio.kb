@@ -1,3 +1,5 @@
+@use '@shared/styles/mixins' as *;
+
 .topbar {
   position: sticky;
   top: 0;
@@ -7,14 +9,14 @@
   justify-content: space-between;
   gap: var(--space-4);
   height: var(--topbar-height);
-  padding: 0 var(--space-6);
-  border-bottom: 1px solid transparent;
-  background: color-mix(in srgb, var(--color-canvas) 86%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  padding: 0 var(--space-10);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-canvas);
 
-  @media (max-width: 900px) {
-    padding: 0 var(--space-3);
+  @include mobile {
+    height: 72px;
+    padding: 0 var(--space-6);
+    background: var(--color-sidebar);
   }
 }
 
@@ -30,31 +32,16 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: var(--space-2);
-}
+  gap: var(--space-3);
 
-/* Разделитель появляется, когда страницу прокрутили (scroll-driven animation) */
-@supports (animation-timeline: scroll()) {
-  .topbar {
-    animation: reveal-border linear both;
-    animation-timeline: scroll(root);
-    animation-range: 0 24px;
-  }
-}
+  @include mobile {
+    gap: var(--space-2);
 
-@keyframes reveal-border {
-  to {
-    border-bottom-color: var(--color-border);
-  }
-}
-
-// На узком экране место — у действий; путь виден в навигации
-@media (max-width: 600px) {
-  .start nav {
-    display: none;
-  }
-
-  .end {
-    gap: var(--space-1);
+    // Кнопки в шапке на узком экране — компактнее
+    > a,
+    > button,
+    > div > button {
+      padding-inline: var(--space-3);
+    }
   }
 }

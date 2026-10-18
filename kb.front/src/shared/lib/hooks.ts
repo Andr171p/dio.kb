@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useEffectEvent, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useState,
+  type RefObject,
+} from 'react';
 
 /**
  * Глобальное сочетание клавиш. `code` — физическая клавиша (KeyK),
@@ -74,3 +80,37 @@ export function useMediaQuery(query: string): boolean {
 export const MOD_KEY_LABEL = /Mac|iPhone|iPad/.test(navigator.platform)
   ? '⌘'
   : 'Ctrl';
+
+/**
+ * Доля прочитанного элемента, 0–100: сколько его высоты уже ушло
+ * выше нижнего края окна.
+ */
+export function useScrollProgress(ref: RefObject<HTMLElement | null>): number {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const element = ref.current;
+        if (!element) return;
+        const rect = element.getBoundingClientRect();
+        const passed = window.innerHeight - rect.top;
+        const ratio = rect.height > 0 ? passed / rect.height : 0;
+        setProgress(Math.round(Math.min(1, Math.max(0, ratio)) * 100));
+      });
+    };
+
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [ref]);
+
+  return progress;
+}

@@ -1,0 +1,45 @@
+@use '@shared/styles/mixins' as *;
+
+.chip {
+  @include reset-button;
+  @include chip;
+  min-width: 72px;
+  padding: 0 var(--space-3);
+  transition:
+    background-color var(--transition),
+    color var(--transition);
+
+  &:hover:not(:disabled) {
+    background: color-mix(
+      in srgb,
+      var(--color-surface-muted) 80%,
+      var(--color-text) 6%
+    );
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring(2px);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+.selected {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+
+  &:hover:not(:disabled) {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-text);
+  }
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

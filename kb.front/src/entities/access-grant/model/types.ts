@@ -10,7 +10,7 @@ export const PERMISSIONS: Permission[] = [
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
   READ: 'Чтение',
-  WRITE: 'Редактирование',
+  WRITE: 'Запись',
   PUBLISH: 'Публикация',
   ARCHIVE: 'Архивирование',
 };

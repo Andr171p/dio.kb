@@ -14,11 +14,18 @@ type Response =
 
 const LIMIT = 20;
 
-/** Поиск с задержкой ввода и отменой устаревших запросов. */
-export function useSearch(query: string, spaceIds: string[]): SearchState {
+/**
+ * Поиск с задержкой ввода и отменой устаревших запросов.
+ * `retry` повторяет тот же запрос после ошибки — текст запроса не теряется.
+ */
+export function useSearch(
+  query: string,
+  spaceIds: string[],
+): [SearchState, () => void] {
   const debounced = useDebouncedValue(query.trim(), 400);
   const spacesKey = spaceIds.join(',');
-  const key = `${debounced}\n${spacesKey}`;
+  const [attempt, setAttempt] = useState(0);
+  const key = `${debounced}\n${spacesKey}\n${attempt}`;
   // Ответ хранится вместе с запросом: «загрузка» — это ответ на другой запрос
   const [response, setResponse] = useState<Response | null>(null);
 
@@ -43,13 +50,21 @@ export function useSearch(query: string, spaceIds: string[]): SearchState {
     return () => controller.abort();
   }, [debounced, spacesKey, key]);
 
-  if (!debounced) return { status: 'idle' };
+  const retry = () => setAttempt((value) => value + 1);
+
+  if (!debounced) return [{ status: 'idle' }, retry];
   if (response?.key !== key)
-    return {
-      status: 'loading',
-      previous: response && 'items' in response ? response.items : null,
-    };
-  return 'items' in response
-    ? { status: 'ready', items: response.items }
-    : { status: 'error', error: response.error };
+    return [
+      {
+        status: 'loading',
+        previous: response && 'items' in response ? response.items : null,
+      },
+      retry,
+    ];
+  return [
+    'items' in response
+      ? { status: 'ready', items: response.items }
+      : { status: 'error', error: response.error },
+    retry,
+  ];
 }

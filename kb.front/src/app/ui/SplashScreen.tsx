@@ -11,7 +11,7 @@ interface SplashScreenProps {
 export function SplashScreen({ error, onRetry }: SplashScreenProps) {
   return (
     <div className={styles.splash}>
-      <LogoMark size={36} />
+      <LogoMark size={44} />
       {error ? (
         <>
           <p className={styles.error}>{error}</p>

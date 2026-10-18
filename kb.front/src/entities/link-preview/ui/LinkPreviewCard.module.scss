@@ -3,8 +3,21 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
+}
+
+.article {
+  gap: 10px;
+}
+
+.open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font: var(--text-meta);
+  color: var(--color-accent-text);
 }
 
 .columns {
@@ -26,7 +39,7 @@
   gap: 6px;
   min-width: 0;
   font: var(--text-caption);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   @include truncate;
 
   svg {
@@ -42,7 +55,7 @@
 }
 
 .title {
-  font: 600 14px/20px var(--font-text);
+  font: 600 18px/1.4 var(--font-ui);
   color: var(--color-text);
   @include line-clamp(2);
 }
@@ -59,9 +72,9 @@
 }
 
 .text {
-  font: 400 13px/19px var(--font-text);
-  color: var(--color-text-secondary);
-  @include line-clamp(2);
+  font: 400 15px/1.6 var(--font-text);
+  color: var(--color-text-body);
+  @include line-clamp(3);
 }
 
 .image {
@@ -71,7 +84,7 @@
   height: 72px;
   border-radius: var(--radius-control);
   object-fit: cover;
-  background: var(--color-surface);
+  background: var(--color-surface-muted);
 }
 
 .skeleton {
@@ -80,9 +93,9 @@
   border-radius: 4px;
   background: linear-gradient(
     90deg,
-    var(--color-surface) 0%,
+    var(--color-surface-muted) 0%,
     var(--color-surface-hover) 50%,
-    var(--color-surface) 100%
+    var(--color-surface-muted) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.2s ease-in-out infinite;

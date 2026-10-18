@@ -1,13 +1,13 @@
+import clsx from 'clsx';
 import styles from './Kbd.module.scss';
 
-export function Kbd({ keys }: { keys: string[] }) {
-  return (
-    <span className={styles.combo}>
-      {keys.map((key) => (
-        <kbd key={key} className={styles.key}>
-          {key}
-        </kbd>
-      ))}
-    </span>
-  );
+/** Сочетание клавиш одной плашкой: «Ctrl K». */
+export function Kbd({
+  keys,
+  className,
+}: {
+  keys: string[];
+  className?: string;
+}) {
+  return <kbd className={clsx(styles.key, className)}>{keys.join(' ')}</kbd>;
 }

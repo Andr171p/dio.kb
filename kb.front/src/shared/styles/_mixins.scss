@@ -15,12 +15,11 @@
   cursor: pointer;
 }
 
-/** Подпись секции: «ПРОСТРАНСТВА», «НЕДАВНИЕ» */
+/** Подпись секции моноширинным капсом: «ПРОСТРАНСТВА», «В ЭТОЙ СТАТЬЕ» */
 @mixin section-label {
   font: var(--text-label);
-  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 @mixin truncate {
@@ -52,24 +51,48 @@
 }
 
 /**
- * Стеклянная поверхность. Используется только для навигации, глобального поиска
- * и плавающей панели редактора — не для содержимого статьи, таблиц и длинных списков.
+ * Деликатное стекло (opacity 94%, blur 16 px). Только для плавающих панелей:
+ * поиск ⌘K, панель форматирования редактора, настройки чтения.
+ * Текст статьи, таблицы, код и длинные списки — на непрозрачных поверхностях.
  */
-@mixin glass($strong: false) {
+@mixin glass {
   border: 1px solid var(--glass-border);
-  @if $strong {
-    background: var(--glass-bg-strong);
-  } @else {
-    background: var(--glass-bg);
-  }
-  box-shadow: var(--glass-highlight), var(--glass-shadow);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 
-  // Без backdrop-filter полупрозрачный фон ухудшает читаемость
   @supports not (backdrop-filter: blur(1px)) {
     background: var(--color-elevated);
   }
+}
+
+/** Светлая поверхность с границей: поле поиска, карточки, кнопки второго уровня */
+@mixin card {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+/** Чип-фильтр 30 px: «Все пространства», «Опубликовано» */
+@mixin chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: var(--chip-height);
+  padding: 0 var(--space-3);
+  border-radius: 15px;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font: var(--text-chip);
+  white-space: nowrap;
+}
+
+/** Горизонтальные поля страницы: 64 px на десктопе, 24 px на мобильных */
+@mixin page-container {
+  width: 100%;
+  max-width: calc(var(--content-width) + 2 * var(--page-gutter));
+  margin: 0 auto;
+  padding: 0 var(--page-gutter);
 }
 
 @mixin mobile {
@@ -78,8 +101,8 @@
   }
 }
 
-@mixin wide {
-  @media (min-width: 1280px) {
+@mixin narrow {
+  @media (max-width: 1180px) {
     @content;
   }
 }

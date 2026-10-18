@@ -7,6 +7,13 @@ export {
   type ArticleEntry,
 } from './model/articles-store';
 export {
+  clearRecentArticles,
+  forgetArticleVisit,
+  rememberArticleVisit,
+  useRecentArticles,
+  type RecentArticle,
+} from './model/recent-articles';
+export {
   loadSpaceArticles,
   refreshSpaceArticles,
   useSpaceArticles,

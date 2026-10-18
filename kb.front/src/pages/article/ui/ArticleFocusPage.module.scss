@@ -1,0 +1,62 @@
+@use '@shared/styles/mixins' as *;
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-canvas);
+
+  @media print {
+    display: none;
+  }
+}
+
+/* Путь — по левому краю колонки текста, кнопка выхода — у правого края окна */
+.headerInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 92px;
+  padding: 0 calc(80px + 280px + var(--space-6)) 0 80px;
+
+  @include mobile {
+    justify-content: flex-end;
+    height: 72px;
+    padding: 0 var(--page-gutter);
+  }
+}
+
+.crumbs {
+  width: 100%;
+  max-width: 760px;
+  margin-left: max(0px, calc((100vw - 760px) / 2 - 80px));
+
+  @include mobile {
+    display: none;
+  }
+}
+
+.exit {
+  position: absolute;
+  top: 50%;
+  right: 80px;
+  min-width: 280px;
+  transform: translateY(-50%);
+
+  @include mobile {
+    position: static;
+    min-width: 0;
+    transform: none;
+  }
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 62px var(--page-gutter) 0;
+  box-sizing: content-box;
+}

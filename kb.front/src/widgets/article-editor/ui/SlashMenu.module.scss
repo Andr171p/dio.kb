@@ -12,7 +12,7 @@
   padding: var(--space-1);
   overflow-y: auto;
   border-radius: var(--radius-card);
-  @include glass(true);
+  @include glass;
   @include thin-scrollbar;
 }
 

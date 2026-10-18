@@ -4,7 +4,9 @@ import type { ReactNode } from 'react';
 import styles from './EmptyState.module.scss';
 
 interface EmptyStateProps {
-  icon: LucideIcon;
+  /** Иконка для контекстов без заголовка; в карточке состояния не показывается */
+  icon?: LucideIcon;
+  tone?: 'default' | 'warning';
   title: string;
   description?: ReactNode;
   action?: ReactNode;
@@ -13,16 +15,25 @@ interface EmptyStateProps {
 
 export function EmptyState({
   icon: Icon,
+  tone = 'default',
   title,
   description,
   action,
   className,
 }: EmptyStateProps) {
   return (
-    <div className={clsx(styles.empty, className)}>
-      <span className={styles.icon}>
-        <Icon size={20} aria-hidden />
-      </span>
+    <div
+      className={clsx(
+        styles.empty,
+        tone === 'warning' && styles.warning,
+        className,
+      )}
+    >
+      {Icon && (
+        <span className={styles.icon}>
+          <Icon size={20} aria-hidden />
+        </span>
+      )}
       <p className={styles.title}>{title}</p>
       {description && <p className={styles.description}>{description}</p>}
       {action && <div className={styles.action}>{action}</div>}

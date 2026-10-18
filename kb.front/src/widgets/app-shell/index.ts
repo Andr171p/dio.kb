@@ -2,8 +2,8 @@ export {
   openSidebarDialog,
   revealInSidebar,
   setMobileSidebarOpen,
-  toggleSidebar,
   useSidebar,
 } from './model/sidebar-store';
+export { AppHeader } from './ui/AppHeader';
 export { AppSidebar } from './ui/AppSidebar';
-export { SidebarToggle } from './ui/SidebarToggle';
+export { NavigationNodeMenu } from './ui/NavigationTree';

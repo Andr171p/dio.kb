@@ -1,36 +1,27 @@
+@use '@shared/styles/mixins' as *;
+
 .page {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100%;
   padding: var(--space-6) var(--space-4);
-  overflow: hidden;
-  background:
-    radial-gradient(
-      600px circle at 20% 10%,
-      var(--canvas-glow-1),
-      transparent 70%
-    ),
-    radial-gradient(
-      700px circle at 85% 90%,
-      var(--canvas-glow-2),
-      transparent 70%
-    ),
-    var(--color-canvas);
+  background: var(--color-canvas);
 }
 
 .card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-8);
   width: 100%;
-  max-width: 420px;
-  padding: var(--space-8);
-  border: 1px solid var(--color-border);
+  max-width: 440px;
+  padding: 40px;
   border-radius: var(--radius-panel);
-  background: var(--color-elevated);
-  box-shadow: var(--shadow-popover);
+  @include card;
+
+  @include mobile {
+    padding: var(--space-6);
+  }
 }
 
 .heading {
@@ -44,7 +35,8 @@
 }
 
 .subtitle {
-  color: var(--color-text-tertiary);
+  font: var(--text-small);
+  color: var(--color-text-secondary);
 }
 
 .dios {
@@ -52,8 +44,9 @@
   align-items: center;
   align-self: center;
   gap: 4px;
-  font: var(--text-caption);
-  color: var(--color-text-tertiary);
+  border-radius: 4px;
+  font: var(--text-meta);
+  color: var(--color-text-secondary);
   text-decoration: none;
 
   &:hover {

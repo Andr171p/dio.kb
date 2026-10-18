@@ -1,5 +1,4 @@
-import { NodeSelection } from '@tiptap/pm/state';
-import { useEditorState, type Editor } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import clsx from 'clsx';
 import {
@@ -7,22 +6,12 @@ import {
   ArrowLeftToLine,
   ArrowRightToLine,
   ArrowUpToLine,
-  Bold,
-  Code,
   Columns3,
-  Heading2,
-  Heading3,
-  Italic,
-  Link2,
-  Quote,
   Rows3,
-  Strikethrough,
   TableProperties,
   Trash2,
   type LucideIcon,
 } from 'lucide-react';
-import { useState } from 'react';
-import { LinkEditor } from './LinkEditor';
 import styles from './EditorToolbar.module.scss';
 
 interface ToolProps {
@@ -55,98 +44,6 @@ function Tool({ icon: Icon, label, active, danger, onClick }: ToolProps) {
 }
 
 const Separator = () => <span className={styles.separator} aria-hidden />;
-
-/** Плавающая панель форматирования выделенного текста. */
-export function SelectionToolbar({ editor }: { editor: Editor }) {
-  const [editingLink, setEditingLink] = useState(false);
-
-  const state = useEditorState({
-    editor,
-    selector: ({ editor: current }) => ({
-      bold: current.isActive('bold'),
-      italic: current.isActive('italic'),
-      strike: current.isActive('strike'),
-      code: current.isActive('code'),
-      link: current.isActive('link'),
-      h2: current.isActive('heading', { level: 2 }),
-      h3: current.isActive('heading', { level: 3 }),
-      quote: current.isActive('blockquote'),
-    }),
-  });
-
-  const chain = () => editor.chain().focus();
-
-  return (
-    <BubbleMenu
-      editor={editor}
-      pluginKey="selectionToolbar"
-      className={styles.toolbar}
-      options={{ placement: 'top', offset: 8 }}
-      shouldShow={({ editor: current, state: editorState, from, to }) => {
-        if (!current.isEditable || from === to) return false;
-        // Изображения и блоки кода не форматируются инлайн-разметкой
-        if (editorState.selection instanceof NodeSelection) return false;
-        return !current.isActive('codeBlock');
-      }}
-    >
-      {editingLink ? (
-        <LinkEditor editor={editor} onDone={() => setEditingLink(false)} />
-      ) : (
-        <div className={styles.group}>
-          <Tool
-            icon={Bold}
-            label="Жирный"
-            active={state.bold}
-            onClick={() => chain().toggleBold().run()}
-          />
-          <Tool
-            icon={Italic}
-            label="Курсив"
-            active={state.italic}
-            onClick={() => chain().toggleItalic().run()}
-          />
-          <Tool
-            icon={Strikethrough}
-            label="Зачёркнутый"
-            active={state.strike}
-            onClick={() => chain().toggleStrike().run()}
-          />
-          <Tool
-            icon={Code}
-            label="Код"
-            active={state.code}
-            onClick={() => chain().toggleCode().run()}
-          />
-          <Tool
-            icon={Link2}
-            label="Ссылка"
-            active={state.link}
-            onClick={() => setEditingLink(true)}
-          />
-          <Separator />
-          <Tool
-            icon={Heading2}
-            label="Заголовок 2"
-            active={state.h2}
-            onClick={() => chain().toggleHeading({ level: 2 }).run()}
-          />
-          <Tool
-            icon={Heading3}
-            label="Заголовок 3"
-            active={state.h3}
-            onClick={() => chain().toggleHeading({ level: 3 }).run()}
-          />
-          <Tool
-            icon={Quote}
-            label="Цитата"
-            active={state.quote}
-            onClick={() => chain().toggleBlockquote().run()}
-          />
-        </div>
-      )}
-    </BubbleMenu>
-  );
-}
 
 /** Панель таблицы: появляется, когда курсор в ячейке. */
 export function TableToolbar({ editor }: { editor: Editor }) {

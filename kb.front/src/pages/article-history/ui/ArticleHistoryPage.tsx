@@ -1,17 +1,14 @@
-import { FileQuestion, FileText } from 'lucide-react';
 import { useEffect } from 'react';
 import { useParams } from 'react-router';
 import { loadArticle, useArticleEntry } from '@entities/article';
 import { loadSpaces, useSpace } from '@entities/space';
-import { SidebarToggle } from '@widgets/app-sidebar';
+import { AppHeader } from '@widgets/app-shell';
 import { ArticleHistory } from '@widgets/article-history';
 import { ArticleContent } from '@widgets/article-viewer';
 import { routes } from '@shared/config/routes';
-import { Breadcrumbs } from '@shared/ui/breadcrumbs';
 import { ButtonLink } from '@shared/ui/button';
 import { EmptyState } from '@shared/ui/empty-state';
-import { Spinner } from '@shared/ui/spinner';
-import { Topbar } from '@shared/ui/topbar';
+import { Skeleton } from '@shared/ui/skeleton';
 import styles from './ArticleHistoryPage.module.scss';
 
 export function ArticleHistoryPage() {
@@ -25,61 +22,51 @@ export function ArticleHistoryPage() {
     void loadSpaces();
   }, [articleId]);
 
+  const backLink = (
+    <ButtonLink to={routes.article(articleId)} className={styles.back}>
+      Вернуться к статье
+    </ButtonLink>
+  );
+
   return (
     <>
-      <Topbar
-        start={
-          <>
-            <SidebarToggle />
-            <Breadcrumbs
-              items={[
-                ...(space
-                  ? [{ label: space.name, to: routes.space(space.id) }]
-                  : []),
-                ...(detail
-                  ? [
-                      {
-                        label: detail.revision.title,
-                        to: routes.article(articleId),
-                      },
-                    ]
-                  : []),
-                { label: 'История' },
-              ]}
-            />
-          </>
-        }
-        end={
-          <ButtonLink
-            to={routes.article(articleId)}
-            size="sm"
-            variant="ghost"
-            icon={FileText}
-          >
-            К статье
-          </ButtonLink>
-        }
+      <AppHeader
+        crumbs={[
+          ...(space ? [{ label: space.name, to: routes.space(space.id) }] : []),
+          ...(detail
+            ? [{ label: detail.revision.title, to: routes.article(articleId) }]
+            : []),
+          { label: 'История' },
+        ]}
       />
-      {!entry || (entry.status === 'loading' && !detail) ? (
-        <div className={styles.loading}>
-          <Spinner size={20} label="Загрузка истории" />
-        </div>
-      ) : detail ? (
-        <ArticleHistory
-          detail={detail}
-          onRestored={() => undefined}
-          renderContent={(markdown) => <ArticleContent markdown={markdown} />}
-        />
-      ) : (
-        <EmptyState
-          icon={FileQuestion}
-          title="История недоступна"
-          description="Историю редакций видят только редакторы статьи."
-          action={
-            <ButtonLink to={routes.article(articleId)}>К статье</ButtonLink>
-          }
-        />
-      )}
+      <div className={styles.page}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>История изменений</h1>
+          <p className={styles.subtitle}>
+            Каждое сохранение создаёт новую редакцию статьи.
+          </p>
+        </header>
+
+        {!entry || (entry.status === 'loading' && !detail) ? (
+          <div className={styles.loading}>
+            <Skeleton height={64} width={270} />
+            <Skeleton height={64} width={270} />
+          </div>
+        ) : detail ? (
+          <ArticleHistory
+            detail={detail}
+            onRestored={() => undefined}
+            renderContent={(markdown) => <ArticleContent markdown={markdown} />}
+            aside={backLink}
+          />
+        ) : (
+          <EmptyState
+            title="История недоступна"
+            description="Историю редакций видят только редакторы статьи."
+            action={backLink}
+          />
+        )}
+      </div>
     </>
   );
 }

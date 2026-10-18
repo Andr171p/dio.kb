@@ -1,8 +1,11 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { routes } from '@shared/config/routes';
-import { AppLayout } from './ui/AppLayout';
+import { AppLayout, type RouteHandle } from './ui/AppLayout';
 import { RouteError } from './ui/RouteError';
 import { SplashScreen } from './ui/SplashScreen';
+
+const accessPage = () =>
+  import('@pages/access').then(({ AccessPage }) => ({ Component: AccessPage }));
 
 /** Страницы грузятся по требованию: редактор и подсветка кода не нужны на главной. */
 export const router = createBrowserRouter([
@@ -28,11 +31,23 @@ export const router = createBrowserRouter([
           })),
       },
       {
+        path: 'recent',
+        lazy: () =>
+          import('@pages/recent').then(({ RecentPage }) => ({
+            Component: RecentPage,
+          })),
+      },
+      {
         path: 'spaces/:spaceId',
         lazy: () =>
           import('@pages/space').then(({ SpacePage }) => ({
             Component: SpacePage,
           })),
+      },
+      { path: 'spaces/:spaceId/access', lazy: accessPage },
+      {
+        path: 'spaces/:spaceId/collections/:collectionId/access',
+        lazy: accessPage,
       },
       {
         path: 'spaces/:spaceId/new',
@@ -49,6 +64,14 @@ export const router = createBrowserRouter([
           })),
       },
       {
+        path: 'articles/:articleId/focus',
+        handle: { bare: true } satisfies RouteHandle,
+        lazy: () =>
+          import('@pages/article').then(({ ArticleFocusPage }) => ({
+            Component: ArticleFocusPage,
+          })),
+      },
+      {
         path: 'articles/:articleId/edit',
         lazy: () =>
           import('@pages/article-editor').then(({ EditArticlePage }) => ({
@@ -62,6 +85,7 @@ export const router = createBrowserRouter([
             Component: ArticleHistoryPage,
           })),
       },
+      { path: 'articles/:articleId/access', lazy: accessPage },
       { path: 'login', element: <Navigate to={routes.home()} replace /> },
       {
         path: '*',

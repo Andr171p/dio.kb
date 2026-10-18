@@ -4,10 +4,15 @@
 .content {
   @include prose;
 
-  :global(.task-list-item) input[type='checkbox'] {
-    margin-top: 0.38em;
+  :global(.task-list-item) input[type='checkbox']:disabled {
     cursor: default;
   }
+}
+
+.taskProgress {
+  margin-top: 0.6em !important;
+  font: var(--text-meta);
+  color: var(--color-text-secondary);
 }
 
 .heading {
@@ -23,7 +28,7 @@
   display: inline-flex;
   margin-left: var(--space-2);
   vertical-align: middle;
-  color: var(--color-text-tertiary) !important;
+  color: var(--color-text-secondary) !important;
   text-decoration: none !important;
   opacity: 0;
   transition: opacity var(--transition);

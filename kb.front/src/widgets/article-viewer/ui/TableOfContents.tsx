@@ -1,83 +1,22 @@
 import clsx from 'clsx';
-import { useEffect, useState, type RefObject } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { Menu, MenuItem } from '@shared/ui/menu';
+import { usePopover } from '@shared/ui/popover';
+import type { HeadingItem } from '../model/headings';
 import styles from './TableOfContents.module.scss';
 
-interface HeadingItem {
-  id: string;
-  text: string;
-  level: number;
-}
-
-const SELECTOR = 'h2[id], h3[id]';
-
-/** Заголовки берём из отрендеренной статьи — якоря гарантированно совпадают с адресами. */
-function useHeadings(
-  containerRef: RefObject<HTMLElement | null>,
-  contentKey: string,
-): HeadingItem[] {
-  const [headings, setHeadings] = useState<HeadingItem[]>([]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    setHeadings(
-      [...container.querySelectorAll<HTMLElement>(SELECTOR)].map((element) => ({
-        id: element.id,
-        text: element.textContent?.trim() ?? '',
-        level: Number(element.tagName.slice(1)),
-      })),
-    );
-  }, [containerRef, contentKey]);
-
-  return headings;
-}
-
-function useActiveHeading(headings: HeadingItem[]): string | null {
-  const [active, setActive] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (headings.length === 0) return;
-    const visible = new Map<string, boolean>();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) =>
-          visible.set(entry.target.id, entry.isIntersecting),
-        );
-        const first = headings.find((heading) => visible.get(heading.id));
-        if (first) setActive(first.id);
-      },
-      // Активен раздел, заголовок которого в верхней трети экрана
-      { rootMargin: '-64px 0px -66% 0px' },
-    );
-
-    headings.forEach((heading) => {
-      const element = document.getElementById(heading.id);
-      if (element) observer.observe(element);
-    });
-    return () => observer.disconnect();
-  }, [headings]);
-
-  return active;
-}
-
 interface TableOfContentsProps {
-  containerRef: RefObject<HTMLElement | null>;
-  contentKey: string;
+  headings: HeadingItem[];
+  active: string | null;
 }
 
-export function TableOfContents({
-  containerRef,
-  contentKey,
-}: TableOfContentsProps) {
-  const headings = useHeadings(containerRef, contentKey);
-  const active = useActiveHeading(headings);
-
+/** Оглавление в правой колонке: «В этой статье». */
+export function TableOfContents({ headings, active }: TableOfContentsProps) {
   if (headings.length < 2) return null;
 
   return (
     <nav className={styles.toc} aria-label="Содержание статьи">
-      <p className={styles.title}>На этой странице</p>
+      <p className={styles.title}>В этой статье</p>
       <ul className={styles.list}>
         {headings.map((heading) => (
           <li key={heading.id}>
@@ -96,5 +35,43 @@ export function TableOfContents({
         ))}
       </ul>
     </nav>
+  );
+}
+
+/** Оглавление на узком экране: кнопка «Оглавление · текущий раздел». */
+export function TableOfContentsMenu({
+  headings,
+  active,
+}: TableOfContentsProps) {
+  const { triggerProps, popoverProps } = usePopover();
+  if (headings.length < 2) return null;
+
+  const current = headings.find((heading) => heading.id === active);
+
+  return (
+    <>
+      <button type="button" className={styles.menuTrigger} {...triggerProps}>
+        <span className={styles.menuLabel}>
+          Оглавление{current ? ` · ${current.text}` : ''}
+        </span>
+        <ChevronDown size={16} aria-hidden />
+      </button>
+      <Menu {...popoverProps} placement="bottom-start" className={styles.menu}>
+        {headings.map((heading) => (
+          <MenuItem
+            key={heading.id}
+            selected={heading.id === active}
+            onSelect={() => {
+              document
+                .getElementById(heading.id)
+                ?.scrollIntoView({ block: 'start' });
+              history.replaceState(null, '', `#${heading.id}`);
+            }}
+          >
+            {heading.text}
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
   );
 }

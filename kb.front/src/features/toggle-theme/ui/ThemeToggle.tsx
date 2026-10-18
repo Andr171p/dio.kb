@@ -7,7 +7,7 @@ export function ThemeToggle() {
 
   return (
     <IconButton
-      icon={dark ? Sun : Moon}
+      icon={dark ? Moon : Sun}
       label={dark ? 'Светлая тема' : 'Тёмная тема'}
       onClick={toggleTheme}
     />

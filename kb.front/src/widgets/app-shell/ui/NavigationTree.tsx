@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import {
+  BookOpen,
   ChevronRight,
   FilePlus,
   FileText,
@@ -23,7 +24,7 @@ import {
   type NavigationNode,
 } from '@entities/collection';
 import { isAdmin, useCurrentUser } from '@entities/session';
-import { SpaceIcon, type Space } from '@entities/space';
+import type { Space } from '@entities/space';
 import {
   archiveCollection,
   removePlacement,
@@ -41,7 +42,9 @@ import {
 } from '../model/sidebar-store';
 import styles from './NavigationTree.module.scss';
 
-const INDENT = 14;
+const INDENT = 16;
+/** Отступ первого уровня: текст дочерних элементов выравнивается по названию пространства */
+const BASE_INDENT = 24;
 
 interface NodeContext {
   space: Space;
@@ -173,12 +176,13 @@ function NodeMenu({
           <MenuItem
             icon={Shield}
             onSelect={() =>
-              openSidebarDialog({
-                kind: 'access',
-                resource: { type: node.type, id: node.id },
-                title: node.title,
-                spaceId: space.id,
-              })
+              void navigate(
+                routes.access(
+                  isCollection
+                    ? { type: 'collection', id: node.id, spaceId: space.id }
+                    : { type: 'article', id: node.id },
+                ),
+              )
             }
           >
             Доступ
@@ -197,6 +201,27 @@ function NodeMenu({
   );
 }
 
+/** Меню действий коллекции или статьи — то же, что в дереве навигации. */
+export function NavigationNodeMenu({
+  space,
+  node,
+}: {
+  space: Space;
+  node: NavigationNode;
+}) {
+  const user = useCurrentUser();
+  return (
+    <NodeMenu
+      node={node}
+      context={{
+        space,
+        canWrite: hasPermission(space.permissions, 'WRITE'),
+        admin: isAdmin(user),
+      }}
+    />
+  );
+}
+
 function TreeNode({
   node,
   depth,
@@ -210,7 +235,7 @@ function TreeNode({
   const expanded = useSidebar((state) => Boolean(state.expanded[node.id]));
   const isCollection = node.type === 'collection';
   const active = !isCollection && node.id === articleId;
-  const style = { paddingLeft: 8 + depth * INDENT };
+  const style = { paddingLeft: BASE_INDENT + (depth - 1) * INDENT };
 
   const label = isCollection ? (
     <button
@@ -285,7 +310,7 @@ function TreeNode({
           {node.children.length === 0 && (
             <li
               className={styles.emptyRow}
-              style={{ paddingLeft: 8 + (depth + 1) * INDENT + 20 }}
+              style={{ paddingLeft: BASE_INDENT + depth * INDENT + 22 }}
             >
               Пусто
             </li>
@@ -339,11 +364,7 @@ function SpaceMenu({ space, context }: { space: Space; context: NodeContext }) {
           <MenuItem
             icon={Shield}
             onSelect={() =>
-              openSidebarDialog({
-                kind: 'access',
-                resource: { type: 'space', id: space.id },
-                title: space.name,
-              })
+              void navigate(routes.access({ type: 'space', id: space.id }))
             }
           >
             Доступ
@@ -384,20 +405,13 @@ export function SpaceTree({ space }: { space: Space }) {
           spaceId === space.id && styles.activeSpace,
         )}
       >
-        <button
-          type="button"
-          className={styles.spaceToggle}
-          aria-label={expanded ? 'Свернуть' : 'Развернуть'}
-          onClick={() => toggleExpanded(space.id)}
-        >
-          <ChevronRight
-            size={14}
-            className={clsx(styles.chevron, expanded && styles.chevronOpen)}
+        <Link to={routes.space(space.id)} className={styles.label}>
+          <BookOpen
+            size={17}
+            strokeWidth={1.7}
+            className={styles.spaceIcon}
             aria-hidden
           />
-        </button>
-        <Link to={routes.space(space.id)} className={styles.label}>
-          <SpaceIcon spaceKey={space.key} />
           <span className={styles.title}>{space.name}</span>
         </Link>
         <div className={styles.actions}>
@@ -413,6 +427,19 @@ export function SpaceTree({ space }: { space: Space }) {
           )}
           <SpaceMenu space={space} context={context} />
         </div>
+        <button
+          type="button"
+          className={clsx(styles.action, styles.toggle)}
+          aria-label={expanded ? 'Свернуть' : 'Развернуть'}
+          aria-expanded={expanded}
+          onClick={() => toggleExpanded(space.id)}
+        >
+          <ChevronRight
+            size={15}
+            className={clsx(styles.chevron, expanded && styles.chevronOpen)}
+            aria-hidden
+          />
+        </button>
       </div>
 
       {expanded && (
@@ -424,7 +451,7 @@ export function SpaceTree({ space }: { space: Space }) {
             </li>
           )}
           {navigation?.status === 'error' && !data && (
-            <li className={styles.emptyRow} style={{ paddingLeft: 30 }}>
+            <li className={styles.emptyRow} style={{ paddingLeft: 38 }}>
               Не удалось загрузить
             </li>
           )}
@@ -435,7 +462,7 @@ export function SpaceTree({ space }: { space: Space }) {
             <TreeNode key={node.id} node={node} depth={1} context={context} />
           ))}
           {empty && (
-            <li className={styles.emptyRow} style={{ paddingLeft: 30 }}>
+            <li className={styles.emptyRow} style={{ paddingLeft: 38 }}>
               Пока нет статей
             </li>
           )}

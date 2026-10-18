@@ -14,7 +14,7 @@ interface RecentState {
   items: RecentArticle[];
 }
 
-const LIMIT = 8;
+const LIMIT = 20;
 
 /** Недавно открытые статьи — только удобство в этом браузере, очищается при выходе. */
 export const useRecentArticles = create<RecentState>()(
@@ -41,4 +41,8 @@ export function forgetArticleVisit(articleId: string) {
   useRecentArticles.setState(({ items }) => ({
     items: items.filter((item) => item.id !== articleId),
   }));
+}
+
+export function clearRecentArticles() {
+  useRecentArticles.setState({ items: [] });
 }

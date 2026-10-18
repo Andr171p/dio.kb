@@ -4,8 +4,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--color-accent-soft);
-  color: var(--color-accent-icon);
-  font: var(--text-control);
-  font-weight: 500;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font: 600 12px/1 var(--font-ui);
 }

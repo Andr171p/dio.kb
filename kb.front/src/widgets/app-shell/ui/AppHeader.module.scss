@@ -1,0 +1,39 @@
+@use '@shared/styles/mixins' as *;
+
+.help {
+  padding: 2px 4px;
+  border-radius: 4px;
+  font: var(--text-small);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--transition);
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  border-radius: 4px;
+  font: 500 15px/1.5 var(--font-ui);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.backLabel {
+  @include truncate;
+}
+
+.logo {
+  display: inline-flex;
+  border-radius: var(--radius-control);
+  text-decoration: none;
+}
+
+.visuallyHidden {
+  @include visually-hidden;
+}

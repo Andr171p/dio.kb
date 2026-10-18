@@ -224,7 +224,12 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       {open && (
         <div className={styles.panel} onKeyDown={onKeyDown}>
           <div className={styles.inputRow}>
-            <Search size={18} className={styles.inputIcon} aria-hidden />
+            <Search
+              size={22}
+              strokeWidth={1.6}
+              className={styles.inputIcon}
+              aria-hidden
+            />
             <input
               ref={inputRef}
               className={styles.input}

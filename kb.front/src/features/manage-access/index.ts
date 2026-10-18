@@ -1,1 +1,1 @@
-export { AccessDialog } from './ui/AccessDialog';
+export { AccessManager } from './ui/AccessManager';

@@ -1,44 +1,38 @@
 import DragHandle from '@tiptap/extension-drag-handle-react';
 import { EditorContent, useEditorState } from '@tiptap/react';
 import clsx from 'clsx';
-import {
-  ChevronDown,
-  CircleAlert,
-  Copy,
-  GripVertical,
-  History,
-  RotateCcw,
-  Save,
-  Send,
-} from 'lucide-react';
+import { ChevronDown, GripVertical } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { hasPermission, type Permission } from '@entities/access-grant';
 import type { ArticleDetail } from '@entities/article';
 import { routes } from '@shared/config/routes';
-import { formatRelative } from '@shared/lib/format';
+import { formatRelative, pluralize } from '@shared/lib/format';
 import { MOD_KEY_LABEL, useCopyToClipboard } from '@shared/lib/hooks';
 import { Button, ButtonLink } from '@shared/ui/button';
 import { Callout } from '@shared/ui/callout';
 import { Dialog, DialogActions } from '@shared/ui/dialog';
+import { EmptyState } from '@shared/ui/empty-state';
 import { TextAreaField } from '@shared/ui/field';
 import { Popover, usePopover } from '@shared/ui/popover';
 import { toast } from '@shared/ui/toast';
-import { Topbar } from '@shared/ui/topbar';
 import {
   useArticleEditor,
   type EditorTarget,
 } from '../model/use-article-editor';
-import { SelectionToolbar, TableToolbar } from './EditorToolbar';
+import { TableToolbar } from './EditorToolbar';
+import { FormatToolbar } from './FormatToolbar';
 import styles from './ArticleEditor.module.scss';
 
 interface ArticleEditorProps {
   target: EditorTarget;
   /** Права в пространстве (для новой статьи) или на статью */
   permissions: Permission[];
-  topbarStart: ReactNode;
   onCreated: (detail: ArticleDetail) => void;
   onPublished: (detail: ArticleDetail) => void;
-  onClose: () => void;
+  /** Предпросмотр Markdown тем же рендером, что и при чтении */
+  renderPreview: (markdown: string) => ReactNode;
+  /** Шапка страницы: редактор передаёт в неё состояние и кнопки сохранения */
+  renderHeader: (actions: ReactNode) => ReactNode;
 }
 
 function SaveButton({
@@ -56,8 +50,6 @@ function SaveButton({
   return (
     <div className={styles.split}>
       <Button
-        size="sm"
-        icon={Save}
         loading={saving}
         disabled={!dirty}
         className={styles.splitMain}
@@ -73,7 +65,7 @@ function SaveButton({
         disabled={!dirty || saving}
         {...triggerProps}
       >
-        <ChevronDown size={14} aria-hidden />
+        <ChevronDown size={15} aria-hidden />
       </button>
       <Popover
         {...popoverProps}
@@ -97,7 +89,7 @@ function SaveButton({
             hint="Комментарий увидят в истории редакций"
             onChange={(event) => setNote(event.target.value)}
           />
-          <Button type="submit" variant="primary" size="sm" icon={Save}>
+          <Button type="submit" variant="primary">
             Сохранить редакцию
           </Button>
         </form>
@@ -110,14 +102,15 @@ function SaveButton({
 export function ArticleEditor({
   target,
   permissions,
-  topbarStart,
   onCreated,
   onPublished,
-  onClose,
+  renderPreview,
+  renderHeader,
 }: ArticleEditorProps) {
   const state = useArticleEditor(target, { onCreated, onPublished });
   const { editor, detail, dirty, status } = state;
   const { copy } = useCopyToClipboard();
+  const [preview, setPreview] = useState<string | null>(null);
   const canPublish = hasPermission(permissions, 'PUBLISH');
 
   const stats = useEditorState({
@@ -128,66 +121,70 @@ export function ArticleEditor({
     }),
   });
 
-  const minutes = Math.max(1, Math.round(stats.words / 180));
+  const article = detail?.article;
+  const published = Boolean(article?.publishedRevisionId);
+  const unpublished = published && (article?.hasUnpublishedChanges || dirty);
+  const isDraft = !article || article.status === 'draft' || unpublished;
+
+  const stateLabel = !detail
+    ? 'Новая статья · черновик'
+    : `${isDraft ? 'Черновик' : 'Опубликовано'} · редакция ${detail.revision.number}`;
+
+  const saveState = [
+    dirty ? 'Локальная копия сохранена' : detail ? 'Изменения сохранены' : null,
+    detail
+      ? `на сервере редакция ${detail.revision.number}`
+      : 'Серверная редакция ещё не создана',
+    pluralize(stats.words, ['слово', 'слова', 'слов']),
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <>
-      <Topbar
-        start={topbarStart}
-        end={
-          <>
-            <span
-              className={clsx(styles.saveState, dirty && styles.saveStateDirty)}
-              aria-live="polite"
+      {renderHeader(
+        <>
+          <span
+            className={clsx(styles.state, isDraft && styles.stateDraft)}
+            aria-live="polite"
+          >
+            {stateLabel}
+          </span>
+          <SaveButton
+            dirty={dirty || !detail}
+            saving={status === 'saving'}
+            onSave={(note) => void state.save(note)}
+          />
+          {canPublish && (
+            <Button
+              variant="primary"
+              loading={status === 'publishing'}
+              disabled={status !== 'idle'}
+              onClick={() => void state.publish()}
             >
-              {dirty ? 'Не сохранено' : detail ? 'Сохранено' : ''}
-            </span>
-            {detail && (
-              <ButtonLink
-                to={routes.articleHistory(detail.article.id)}
-                variant="ghost"
-                size="sm"
-                icon={History}
-                className={styles.hideMobile}
-              >
-                История
-              </ButtonLink>
-            )}
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              {detail ? 'Готово' : 'Отмена'}
+              Опубликовать
             </Button>
-            <SaveButton
-              dirty={dirty || !detail}
-              saving={status === 'saving'}
-              onSave={(note) => void state.save(note)}
-            />
-            {canPublish && (
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Send}
-                loading={status === 'publishing'}
-                disabled={status !== 'idle'}
-                onClick={() => void state.publish()}
-              >
-                Опубликовать
-              </Button>
-            )}
-          </>
-        }
-      />
-
+          )}
+        </>,
+      )}
       <div className={styles.page}>
-        {state.conflict && (
-          <Callout
-            icon={CircleAlert}
+        {state.conflict ? (
+          <EmptyState
             tone="warning"
+            className={styles.notice}
             title="Статья изменилась, пока вы её редактировали"
-            actions={
+            description="Ваш текст сохранён локально. Сравните изменения перед сохранением новой редакции — предыдущая редакция останется в истории."
+            action={
               <>
+                {detail && (
+                  <ButtonLink
+                    to={routes.articleHistory(detail.article.id)}
+                    target="_blank"
+                  >
+                    Сравнить изменения
+                  </ButtonLink>
+                )}
                 <Button
-                  size="sm"
-                  icon={Copy}
                   onClick={() =>
                     void copy(state.getContent()).then(() =>
                       toast.success('Ваш текст скопирован в буфер обмена'),
@@ -196,18 +193,7 @@ export function ArticleEditor({
                 >
                   Скопировать мой текст
                 </Button>
-                {detail && (
-                  <ButtonLink
-                    size="sm"
-                    to={routes.articleHistory(detail.article.id)}
-                    target="_blank"
-                    icon={History}
-                  >
-                    Открыть историю
-                  </ButtonLink>
-                )}
                 <Button
-                  size="sm"
                   variant="primary"
                   loading={status === 'saving'}
                   onClick={() => void state.overwrite()}
@@ -216,24 +202,25 @@ export function ArticleEditor({
                 </Button>
               </>
             }
-          >
-            Кто-то сохранил новую редакцию. Ваш текст остался в редакторе —
-            сравните версии в истории или сохраните свою поверх: предыдущая
-            редакция останется в истории.
-          </Callout>
+          />
+        ) : (
+          isDraft && (
+            <p className={styles.band} role="status">
+              {published
+                ? 'Есть неопубликованные изменения. Читатели видят опубликованную редакцию.'
+                : 'Статья ещё не опубликована — её видят только редакторы пространства.'}
+            </p>
+          )
         )}
 
         {state.restorable && (
           <Callout
-            icon={RotateCcw}
-            tone="info"
+            className={styles.notice}
             title="Найдены несохранённые изменения"
             actions={
               <>
-                <Button size="sm" onClick={state.discardRestorable}>
-                  Удалить
-                </Button>
-                <Button size="sm" variant="primary" onClick={state.restore}>
+                <Button onClick={state.discardRestorable}>Удалить</Button>
+                <Button variant="primary" onClick={state.restore}>
                   Восстановить
                 </Button>
               </>
@@ -250,76 +237,110 @@ export function ArticleEditor({
           </Callout>
         )}
 
-        <textarea
-          id="article-title"
-          className={styles.title}
-          value={state.title}
-          placeholder="Название статьи"
-          rows={1}
-          maxLength={255}
-          aria-label="Название статьи"
-          autoFocus={!detail}
-          onChange={(event) =>
-            state.setTitle(event.target.value.replace(/\n/g, ' '))
-          }
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              editor?.commands.focus('start');
+        <div className={styles.document} hidden={preview !== null}>
+          <textarea
+            id="article-title"
+            className={styles.title}
+            value={state.title}
+            placeholder="Название статьи"
+            rows={1}
+            maxLength={255}
+            aria-label="Название статьи"
+            autoFocus={!detail}
+            onChange={(event) =>
+              state.setTitle(event.target.value.replace(/\n/g, ' '))
             }
-          }}
-        />
-        <textarea
-          className={styles.summary}
-          value={state.summary}
-          rows={1}
-          placeholder="Краткое описание — показывается в поиске и превью ссылок"
-          aria-label="Краткое описание"
-          onChange={(event) =>
-            state.setSummary(event.target.value.replace(/\n/g, ' '))
-          }
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              editor?.commands.focus('start');
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                editor?.commands.focus('start');
+              }
+            }}
+          />
+          <label className={styles.summaryLabel} htmlFor="article-summary">
+            Краткое описание
+          </label>
+          <textarea
+            id="article-summary"
+            className={styles.summary}
+            value={state.summary}
+            rows={1}
+            placeholder="Пара предложений о главном — показывается в блоке «Коротко», поиске и превью ссылок"
+            onChange={(event) =>
+              state.setSummary(event.target.value.replace(/\n/g, ' '))
             }
-          }}
-        />
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                editor?.commands.focus('start');
+              }
+            }}
+          />
 
-        <div className={styles.editorArea}>
-          {editor && (
-            <>
-              <DragHandle editor={editor} className={styles.dragHandle}>
-                <GripVertical size={14} aria-hidden />
-              </DragHandle>
-              <SelectionToolbar editor={editor} />
-              <TableToolbar editor={editor} />
-            </>
-          )}
-          <EditorContent editor={editor} className={styles.content} />
+          <div className={styles.editorArea}>
+            {editor && (
+              <>
+                <FormatToolbar editor={editor} />
+                <DragHandle editor={editor} className={styles.dragHandle}>
+                  <GripVertical size={14} aria-hidden />
+                </DragHandle>
+                <TableToolbar editor={editor} />
+              </>
+            )}
+            <EditorContent editor={editor} className={styles.content} />
+          </div>
         </div>
-      </div>
 
-      <footer
-        className={styles.footer}
-        title={`${MOD_KEY_LABEL}+S — сохранить, «/» — блоки`}
-      >
-        {stats.words} слов · ~{minutes} мин
-      </footer>
+        {preview !== null && (
+          <div className={styles.preview}>
+            <h1 className={styles.previewTitle}>
+              {state.title.trim() || 'Без названия'}
+            </h1>
+            {state.summary.trim() && (
+              <section className={styles.previewSummary}>
+                <p className={styles.previewSummaryLabel}>Коротко</p>
+                <p>{state.summary}</p>
+              </section>
+            )}
+            {renderPreview(preview)}
+          </div>
+        )}
 
-      <Dialog
-        open={state.blocker.state === 'blocked'}
-        onClose={() => state.blocker.reset?.()}
-        title="Уйти без сохранения?"
-        description="Несохранённые изменения останутся в этом браузере — их можно будет восстановить, открыв редактор снова."
-      >
-        <DialogActions>
-          <Button onClick={() => state.blocker.reset?.()}>Остаться</Button>
-          <Button variant="danger" onClick={() => state.blocker.proceed?.()}>
-            Уйти
+        <footer className={styles.footer}>
+          <p
+            className={styles.saveState}
+            aria-live="polite"
+            title={`${MOD_KEY_LABEL}+S — сохранить, «/» — блоки`}
+          >
+            {saveState}
+          </p>
+          <Button
+            className={styles.previewButton}
+            aria-pressed={preview !== null}
+            onClick={() =>
+              setPreview((current) =>
+                current === null ? state.getContent() : null,
+              )
+            }
+          >
+            {preview === null ? 'Предпросмотр' : 'Вернуться к правке'}
           </Button>
-        </DialogActions>
-      </Dialog>
+        </footer>
+
+        <Dialog
+          open={state.blocker.state === 'blocked'}
+          onClose={() => state.blocker.reset?.()}
+          title="Уйти без сохранения?"
+          description="Несохранённые изменения останутся в этом браузере — их можно будет восстановить, открыв редактор снова."
+        >
+          <DialogActions>
+            <Button onClick={() => state.blocker.reset?.()}>Остаться</Button>
+            <Button variant="danger" onClick={() => state.blocker.proceed?.()}>
+              Уйти
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </div>
     </>
   );
 }

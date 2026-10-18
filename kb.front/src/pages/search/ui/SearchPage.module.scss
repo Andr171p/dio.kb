@@ -1,160 +1,59 @@
 @use '@shared/styles/mixins' as *;
 
 .page {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: var(--space-6) var(--space-8) var(--space-16);
+  @include page-container;
+  padding-top: 46px;
+  padding-bottom: var(--space-16);
 
   @include mobile {
-    padding: var(--space-4);
-  }
-}
-
-.search {
-  position: relative;
-}
-
-.searchIcon {
-  position: absolute;
-  top: 50%;
-  left: var(--space-4);
-  color: var(--color-text-tertiary);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.input {
-  width: 100%;
-  height: 52px;
-  padding: 0 48px 0 calc(var(--space-4) + 28px);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  background: var(--color-paper);
-  font: 400 16px/24px var(--font-text);
-  transition:
-    border-color var(--transition),
-    box-shadow var(--transition);
-
-  &::placeholder {
-    color: var(--color-text-tertiary);
-  }
-
-  &:hover {
-    border-color: var(--color-border-strong);
-  }
-
-  &:focus-visible {
-    border-color: var(--color-focus);
-    outline: none;
-    box-shadow: 0 0 0 3px var(--color-accent-soft);
+    padding-top: var(--space-6);
   }
 }
 
 .clear {
   @include reset-button;
-  position: absolute;
-  top: 50%;
-  right: var(--space-3);
   display: inline-flex;
+  flex: none;
   padding: 6px;
   border-radius: var(--radius-sm);
-  color: var(--color-text-tertiary);
-  transform: translateY(-50%);
+  color: var(--color-text-secondary);
 
   &:hover {
-    background: var(--color-surface-hover);
+    background: var(--color-surface-active);
     color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring(-1px);
   }
 }
 
 .filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
-}
-
-.chip {
-  @include reset-button;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 30px;
-  padding: 0 var(--space-3) 0 6px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-round);
-  font: var(--text-caption);
-  color: var(--color-text-secondary);
-  transition:
-    border-color var(--transition),
-    background-color var(--transition);
-
-  &:hover {
-    border-color: var(--color-border-strong);
-    color: var(--color-text);
-  }
-
-  &:focus-visible {
-    @include focus-ring(1px);
-  }
-}
-
-.chipActive {
-  border-color: var(--color-accent-soft-border);
-  background: var(--color-accent-soft);
-  color: var(--color-text);
+  margin-top: 24px;
 }
 
 .results {
-  margin-top: var(--space-8);
-}
+  margin-top: 58px;
 
-.tips {
-  padding: var(--space-5);
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-card);
-}
-
-.tipsTitle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font: var(--text-subtitle);
-
-  svg {
-    flex: none;
-    color: var(--color-warning);
+  @include mobile {
+    margin-top: var(--space-8);
   }
 }
 
+.tips {
+  max-width: 720px;
+}
+
+.tipsTitle {
+  font: var(--text-title);
+}
+
 .tipsText {
-  margin-top: var(--space-2);
-  font: 400 14px/22px var(--font-text);
+  margin-top: 4px;
+  font: 400 15px/1.5 var(--font-ui);
   color: var(--color-text-secondary);
 }
 
 .examples {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-
-.example {
-  @include reset-button;
-  padding: 6px var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-paper);
-  font: 400 13px/18px var(--font-text);
-  color: var(--color-text-secondary);
-
-  &:hover {
-    border-color: var(--color-border-strong);
-    color: var(--color-text);
-  }
-
-  &:focus-visible {
-    @include focus-ring(1px);
-  }
+  margin-top: var(--space-5);
 }

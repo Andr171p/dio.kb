@@ -1,6 +1,5 @@
 import { CreateCollectionDialog } from '@features/create-collection';
 import { CreateSpaceDialog } from '@features/create-space';
-import { AccessDialog } from '@features/manage-access';
 import {
   PlacementDialog,
   RenameCollectionDialog,
@@ -40,15 +39,6 @@ export function SidebarDialogs() {
           spaceId={dialog.spaceId}
           node={dialog.node}
           mode={dialog.mode}
-        />
-      );
-    case 'access':
-      return (
-        <AccessDialog
-          {...props}
-          resource={dialog.resource}
-          title={dialog.title}
-          spaceId={dialog.spaceId}
         />
       );
   }

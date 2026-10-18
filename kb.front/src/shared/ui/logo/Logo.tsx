@@ -1,33 +1,31 @@
+import clsx from 'clsx';
+import mark from './assets/dio-logo.png';
 import styles from './Logo.module.scss';
 
-export function LogoMark({ size = 24 }: { size?: number }) {
+/** Знак ДИО. Исходник 66×80, поэтому высота задаёт размер, ширина — по пропорции. */
+export function LogoMark({
+  size = 24,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
+    <img
+      src={mark}
+      alt=""
       aria-hidden
-      className={styles.mark}
-    >
-      <path
-        fill="#bb252d"
-        d="M3 21V11.5A8.5 8.5 0 0 1 11.5 3H15v5.5h-3.5a3 3 0 0 0-3 3V21Z"
-      />
-      <path
-        fill="#9a9a96"
-        d="M15.5 9H21v6a7 7 0 0 1-7 7H9v-5.5h5a1.5 1.5 0 0 0 1.5-1.5Z"
-      />
-      <circle cx="19.5" cy="4.5" r="1.8" fill="#b5b5b0" />
-    </svg>
+      className={clsx(styles.mark, className)}
+      style={{ height: size }}
+    />
   );
 }
 
-export function Logo() {
+export function Logo({ size = 28 }: { size?: number }) {
   return (
-    <span className={styles.logo} aria-label="DIOS Knowledge">
-      <LogoMark size={22} />
-      <span className={styles.word}>DIOS</span>
-      <span className={styles.suffix}>knowledge</span>
+    <span className={styles.logo}>
+      <LogoMark size={size} />
+      <span className={styles.word}>База знаний</span>
     </span>
   );
 }

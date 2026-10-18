@@ -1,12 +1,12 @@
-import clsx from 'clsx';
-import { Lightbulb, Search, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { loadSpaces, SpaceIcon, useSpaces } from '@entities/space';
-import { SidebarToggle } from '@widgets/app-sidebar';
+import { loadSpaces, useSpaces } from '@entities/space';
+import { AppHeader } from '@widgets/app-shell';
 import { SearchResults, useSearch } from '@widgets/search-results';
-import { Breadcrumbs } from '@shared/ui/breadcrumbs';
-import { Topbar } from '@shared/ui/topbar';
+import { MOD_KEY_LABEL } from '@shared/lib/hooks';
+import { Chip, ChipGroup } from '@shared/ui/chip';
+import { SearchField } from '@shared/ui/search-field';
 import styles from './SearchPage.module.scss';
 
 const EXAMPLES = [
@@ -22,7 +22,7 @@ export function SearchPage() {
   const spaces = useSpaces((state) => state.items);
   const [query, setQuery] = useState(urlQuery);
   const [prevUrlQuery, setPrevUrlQuery] = useState(urlQuery);
-  const state = useSearch(query, spaceIds);
+  const [state, retry] = useSearch(query, spaceIds);
 
   useEffect(() => {
     void loadSpaces();
@@ -49,102 +49,96 @@ export function SearchPage() {
         : [...spaceIds, spaceId],
     });
 
+  const resetFilters = () => updateParams({ spaces: [] });
+
   return (
     <>
-      <Topbar
-        start={
-          <>
-            <SidebarToggle />
-            <Breadcrumbs items={[{ label: 'Поиск по содержимому' }]} />
-          </>
-        }
-      />
+      <AppHeader crumbs={[{ label: 'Поиск по базе знаний' }]} />
       <div className={styles.page}>
         <form
-          className={styles.search}
           role="search"
           onSubmit={(event) => {
             event.preventDefault();
             updateParams({ q: query });
           }}
         >
-          <Search size={18} className={styles.searchIcon} aria-hidden />
-          <input
-            className={styles.input}
+          <SearchField
             value={query}
             placeholder="Опишите вопрос или проблему"
             aria-label="Поисковый запрос"
             autoFocus
+            shortcut={query ? undefined : [MOD_KEY_LABEL, 'K']}
+            trailing={
+              query && (
+                <button
+                  type="button"
+                  className={styles.clear}
+                  aria-label="Очистить"
+                  onClick={() => {
+                    setQuery('');
+                    updateParams({ q: '' });
+                  }}
+                >
+                  <X size={18} aria-hidden />
+                </button>
+              )
+            }
             onChange={(event) => setQuery(event.target.value)}
             onBlur={() => updateParams({ q: query })}
           />
-          {query && (
-            <button
-              type="button"
-              className={styles.clear}
-              aria-label="Очистить"
-              onClick={() => {
-                setQuery('');
-                updateParams({ q: '' });
-              }}
-            >
-              <X size={16} aria-hidden />
-            </button>
-          )}
         </form>
 
         {spaces.length > 1 && (
-          <div
-            className={styles.filters}
-            role="group"
-            aria-label="Пространства"
-          >
-            {spaces.map((space) => {
-              const active = spaceIds.includes(space.id);
-              return (
-                <button
-                  key={space.id}
-                  type="button"
-                  aria-pressed={active}
-                  className={clsx(styles.chip, active && styles.chipActive)}
-                  onClick={() => toggleSpace(space.id)}
-                >
-                  <SpaceIcon spaceKey={space.key} />
-                  {space.name}
-                </button>
-              );
-            })}
-          </div>
+          <ChipGroup className={styles.filters} aria-label="Пространства">
+            <Chip selected={spaceIds.length === 0} onClick={resetFilters}>
+              Все пространства
+            </Chip>
+            {spaces.map((space) => (
+              <Chip
+                key={space.id}
+                selected={spaceIds.includes(space.id)}
+                onClick={() => toggleSpace(space.id)}
+              >
+                {space.name}
+              </Chip>
+            ))}
+            {spaceIds.length > 0 && (
+              <Chip onClick={resetFilters}>Сбросить</Chip>
+            )}
+          </ChipGroup>
         )}
 
         <div className={styles.results}>
           {state.status === 'idle' ? (
             <section className={styles.tips}>
-              <p className={styles.tipsTitle}>
-                <Lightbulb size={16} aria-hidden /> Поиск понимает смысл, а не
-                только слова
-              </p>
+              <h2 className={styles.tipsTitle}>
+                Поиск понимает смысл, а не только слова
+              </h2>
               <p className={styles.tipsText}>
                 Опишите ситуацию так, как написали бы коллеге. Например:
               </p>
-              <div className={styles.examples}>
+              <ChipGroup className={styles.examples}>
                 {EXAMPLES.map((example) => (
-                  <button
+                  <Chip
                     key={example}
-                    type="button"
-                    className={styles.example}
                     onClick={() => {
                       setQuery(example);
                       updateParams({ q: example });
                     }}
                   >
                     {example}
-                  </button>
+                  </Chip>
                 ))}
-              </div>
+              </ChipGroup>
             </section>
           ) : (
-            <SearchResults state={state} query={query} spaces={spaces} />
+            <SearchResults
+              state={state}
+              query={query}
+              spaces={spaces}
+              onRetry={retry}
+              onResetFilters={spaceIds.length > 0 ? resetFilters : undefined}
+            />
           )}
         </div>
       </div>

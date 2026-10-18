@@ -2,25 +2,25 @@ import {
   Archive,
   ArchiveRestore,
   Eye,
-  FileClock,
-  FileQuestion,
-  FileText,
   History,
   Link2,
+  Lock,
+  Maximize2,
   MoreHorizontal,
   Pencil,
+  Plus,
   Printer,
   Send,
-  Shield,
+  Type,
   Undo2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router';
+import { useEffect, useId, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import { hasPermission } from '@entities/access-grant';
 import {
   ArticleStatusBadge,
-  loadArticle,
-  useArticleEntry,
+  forgetArticleVisit,
+  rememberArticleVisit,
   type ArticleDetail,
 } from '@entities/article';
 import {
@@ -36,19 +36,12 @@ import {
   restoreArticle,
   unpublishArticle,
 } from '@features/article-lifecycle';
-import {
-  openSidebarDialog,
-  revealInSidebar,
-  SidebarToggle,
-} from '@widgets/app-sidebar';
+import { ReadingSettingsPopover } from '@features/reading-settings';
+import { AppHeader, revealInSidebar } from '@widgets/app-shell';
 import { ArticleReader } from '@widgets/article-viewer';
-import {
-  forgetArticleVisit,
-  rememberArticleVisit,
-} from '@widgets/global-search';
 import { routes } from '@shared/config/routes';
-import { useCopyToClipboard } from '@shared/lib/hooks';
-import { Breadcrumbs, type Crumb } from '@shared/ui/breadcrumbs';
+import { useCopyToClipboard, useMediaQuery } from '@shared/lib/hooks';
+import type { Crumb } from '@shared/ui/breadcrumbs';
 import { Button, ButtonLink, IconButton } from '@shared/ui/button';
 import { Callout } from '@shared/ui/callout';
 import { confirmAction } from '@shared/ui/dialog';
@@ -57,53 +50,11 @@ import { Menu, MenuItem, MenuSeparator } from '@shared/ui/menu';
 import { usePopover } from '@shared/ui/popover';
 import { Skeleton } from '@shared/ui/skeleton';
 import { toast } from '@shared/ui/toast';
-import { Topbar } from '@shared/ui/topbar';
+import {
+  useArticleForReading,
+  type View,
+} from '../model/use-article-for-reading';
 import styles from './ArticlePage.module.scss';
-
-type View = 'published' | 'draft';
-
-/**
- * Читатель видит опубликованную редакцию. Черновик загружается, только если
- * опубликованной нет или редактор явно переключился на него.
- */
-function useArticleForReading(articleId: string, view: View) {
-  const published = useArticleEntry(articleId, 'published');
-  const draft = useArticleEntry(articleId, 'draft');
-
-  useEffect(() => {
-    void loadArticle(articleId, 'published');
-  }, [articleId]);
-
-  const publishedMissing = published?.status === 'error';
-  const wantsDraft = view === 'draft' || publishedMissing;
-
-  useEffect(() => {
-    if (wantsDraft) void loadArticle(articleId, 'draft');
-  }, [articleId, wantsDraft]);
-
-  if (!published || published.status === 'loading')
-    return { status: 'loading' as const };
-
-  if (!publishedMissing && view === 'published' && published.data)
-    return {
-      status: 'ready' as const,
-      detail: published.data,
-      version: 'published' as const,
-      published: published.data,
-    };
-
-  if (!draft || draft.status === 'loading')
-    return { status: 'loading' as const };
-  if (draft.data)
-    return {
-      status: 'ready' as const,
-      detail: draft.data,
-      version: 'draft' as const,
-      published: published.data,
-    };
-
-  return { status: 'missing' as const };
-}
 
 function ArticleActions({
   detail,
@@ -114,18 +65,26 @@ function ArticleActions({
   version: View;
   onViewChange: (view: View) => void;
 }) {
-  const { article, permissions, revision } = detail;
+  const { article, permissions } = detail;
   const user = useCurrentUser();
+  const space = useSpace(article.spaceId);
+  const mobile = useMediaQuery('(max-width: 900px)');
   const { triggerProps, popoverProps } = usePopover();
+  const settingsId = useId();
   const { copy } = useCopyToClipboard();
+  const navigate = useNavigate();
   const [publishing, setPublishing] = useState(false);
 
   const canWrite = hasPermission(permissions, 'WRITE');
   const canPublish = hasPermission(permissions, 'PUBLISH');
   const canArchive = hasPermission(permissions, 'ARCHIVE');
+  const canCreate = hasPermission(space?.permissions, 'WRITE');
   const archived = article.status === 'archived';
   const needsPublish =
-    !archived && (article.status === 'draft' || article.hasUnpublishedChanges);
+    canPublish &&
+    !archived &&
+    (article.status === 'draft' || article.hasUnpublishedChanges);
+  const canEdit = canWrite && !archived;
 
   const publish = async () => {
     setPublishing(true);
@@ -133,56 +92,83 @@ function ArticleActions({
     setPublishing(false);
   };
 
+  // Панель настроек открывается после закрытия меню, иначе меню закроет её
+  const openReadingSettings = () =>
+    requestAnimationFrame(() =>
+      document.getElementById(settingsId)?.showPopover(),
+    );
+
   return (
     <>
-      {canWrite && !archived && (
-        <ButtonLink
-          to={routes.articleHistory(article.id)}
-          variant="ghost"
-          size="sm"
-          icon={History}
-        >
-          <span className={styles.hideMobile}>История</span>
-        </ButtonLink>
-      )}
-      {canWrite && !archived && (
-        <ButtonLink
-          to={routes.editArticle(article.id)}
-          variant={needsPublish && canPublish ? 'secondary' : 'primary'}
-          size="sm"
-          icon={Pencil}
-          aria-label="Редактировать"
-        >
-          <span className={styles.hideMobile}>Редактировать</span>
-        </ButtonLink>
-      )}
-      {canPublish && needsPublish && (
+      {!mobile && needsPublish && (
         <Button
           variant="primary"
-          size="sm"
-          icon={Send}
           loading={publishing}
           onClick={() => void publish()}
         >
           Опубликовать
         </Button>
       )}
-
-      <IconButton icon={MoreHorizontal} label="Ещё" {...triggerProps} />
-      <Menu {...popoverProps} placement="bottom-end">
+      {!mobile && canEdit && (
+        <ButtonLink to={routes.editArticle(article.id)} icon={Pencil}>
+          Изменить
+        </ButtonLink>
+      )}
+      {!mobile && canCreate && (
+        <ButtonLink to={routes.newArticle(article.spaceId)} icon={Plus}>
+          Новая статья
+        </ButtonLink>
+      )}
+      <IconButton
+        icon={MoreHorizontal}
+        label="Действия со статьёй"
+        variant="secondary"
+        size="md"
+        tooltip={false}
+        {...triggerProps}
+      />
+      <Menu {...popoverProps} placement="bottom-end" className={styles.menu}>
+        {mobile && needsPublish && (
+          <MenuItem icon={Send} onSelect={() => void publish()}>
+            Опубликовать
+          </MenuItem>
+        )}
+        {mobile && canEdit && (
+          <MenuItem
+            icon={Pencil}
+            onSelect={() => void navigate(routes.editArticle(article.id))}
+          >
+            Изменить
+          </MenuItem>
+        )}
+        <MenuItem icon={Type} onSelect={openReadingSettings}>
+          Настройки чтения
+        </MenuItem>
         <MenuItem
-          icon={Link2}
-          onSelect={() =>
-            void copy(
-              `${window.location.origin}${routes.article(article.id)}`,
-            ).then(() => toast.success('Ссылка скопирована'))
-          }
+          icon={Maximize2}
+          onSelect={() => void navigate(routes.articleFocus(article.id))}
         >
-          Копировать ссылку
+          Режим фокуса
         </MenuItem>
-        <MenuItem icon={Printer} onSelect={() => window.print()}>
-          Печать или PDF
-        </MenuItem>
+        <MenuSeparator />
+        {canEdit && (
+          <MenuItem
+            icon={History}
+            onSelect={() => void navigate(routes.articleHistory(article.id))}
+          >
+            История
+          </MenuItem>
+        )}
+        {isAdmin(user) && (
+          <MenuItem
+            icon={Lock}
+            onSelect={() =>
+              void navigate(routes.access({ type: 'article', id: article.id }))
+            }
+          >
+            Доступ
+          </MenuItem>
+        )}
         {canWrite &&
           article.publishedRevisionId &&
           article.hasUnpublishedChanges && (
@@ -197,22 +183,29 @@ function ArticleActions({
                 : 'Посмотреть черновик'}
             </MenuItem>
           )}
-        {isAdmin(user) && (
+        <MenuItem
+          icon={Link2}
+          onSelect={() =>
+            void copy(
+              `${window.location.origin}${routes.article(article.id)}`,
+            ).then(() => toast.success('Ссылка скопирована'))
+          }
+        >
+          Копировать ссылку
+        </MenuItem>
+        <MenuItem icon={Printer} onSelect={() => window.print()}>
+          Печать или PDF
+        </MenuItem>
+        {mobile && canCreate && (
           <MenuItem
-            icon={Shield}
-            onSelect={() =>
-              openSidebarDialog({
-                kind: 'access',
-                resource: { type: 'article', id: article.id },
-                title: revision.title,
-                spaceId: article.spaceId,
-              })
-            }
+            icon={Plus}
+            onSelect={() => void navigate(routes.newArticle(article.spaceId))}
           >
-            Доступ
+            Новая статья
           </MenuItem>
         )}
-        {(canPublish || canArchive) && <MenuSeparator />}
+        {((canPublish && article.status === 'published') ||
+          (canArchive && !archived)) && <MenuSeparator />}
         {canPublish && article.status === 'published' && (
           <MenuItem
             icon={Undo2}
@@ -245,10 +238,15 @@ function ArticleActions({
               })
             }
           >
-            В архив
+            Архивировать
           </MenuItem>
         )}
       </Menu>
+      <ReadingSettingsPopover
+        id={settingsId}
+        anchorRef={popoverProps.anchorRef}
+        onFocusMode={() => void navigate(routes.articleFocus(article.id))}
+      />
     </>
   );
 }
@@ -270,13 +268,11 @@ function ArticleNotice({
   if (article.status === 'archived')
     return (
       <Callout
-        icon={Archive}
         tone="neutral"
         title="Статья в архиве"
         actions={
           hasPermission(permissions, 'ARCHIVE') && (
             <Button
-              size="sm"
               icon={ArchiveRestore}
               loading={restoring}
               onClick={() => {
@@ -297,7 +293,7 @@ function ArticleNotice({
 
   if (!article.publishedRevisionId)
     return (
-      <Callout icon={FileClock} tone="warning" title="Черновик">
+      <Callout tone="warning" title="Черновик">
         Статья ещё не опубликована — её видят только редакторы пространства.
       </Callout>
     );
@@ -305,11 +301,10 @@ function ArticleNotice({
   if (version === 'draft')
     return (
       <Callout
-        icon={FileClock}
         tone="warning"
         title={`Черновик · редакция ${detail.revision.number}`}
         actions={
-          <Button size="sm" onClick={() => onViewChange('published')}>
+          <Button onClick={() => onViewChange('published')}>
             Опубликованная версия
           </Button>
         }
@@ -323,11 +318,10 @@ function ArticleNotice({
   if (article.hasUnpublishedChanges && hasPermission(permissions, 'WRITE'))
     return (
       <Callout
-        icon={FileText}
-        tone="info"
+        tone="warning"
         title="Есть неопубликованные изменения"
         actions={
-          <Button size="sm" icon={Eye} onClick={() => onViewChange('draft')}>
+          <Button onClick={() => onViewChange('draft')}>
             Посмотреть черновик
           </Button>
         }
@@ -391,35 +385,31 @@ export function ArticlePage() {
     if (result.status === 'missing') forgetArticleVisit(articleId);
   }, [result.status, articleId]);
 
+  const collectionPath = path?.slice(0, -1).map((node) => node.title) ?? [];
   const crumbs: Crumb[] = [
     ...(space ? [{ label: space.name, to: routes.space(space.id) }] : []),
-    ...(path?.slice(0, -1).map((node) => ({ label: node.title })) ?? []),
+    ...collectionPath.map((label) => ({ label })),
     ...(detail ? [{ label: detail.revision.title }] : []),
   ];
 
   return (
     <>
-      <Topbar
-        start={
-          <>
-            <SidebarToggle />
-            <Breadcrumbs items={crumbs} />
-          </>
-        }
-        end={
-          detail && (
+      <AppHeader
+        crumbs={crumbs}
+        actions={
+          result.status === 'ready' && (
             <ArticleActions
-              detail={detail}
-              version={result.status === 'ready' ? result.version : 'published'}
+              detail={result.detail}
+              version={result.version}
               onViewChange={setView}
             />
           )
         }
-        className={styles.topbar}
       />
 
       {result.status === 'loading' && (
         <div className={styles.skeleton}>
+          <Skeleton height={12} width="30%" />
           <Skeleton height={40} width="70%" />
           <Skeleton height={14} width="40%" />
           <div className={styles.skeletonBody}>
@@ -435,22 +425,30 @@ export function ArticlePage() {
       )}
 
       {result.status === 'missing' && (
-        <EmptyState
-          icon={FileQuestion}
-          title="Статья не найдена"
-          description="Возможно, её сняли с публикации, архивировали или у вас нет доступа."
-          action={<ButtonLink to={routes.home()}>На главную</ButtonLink>}
-        />
+        <div className={styles.missing}>
+          <EmptyState
+            title="Статья недоступна"
+            description="Возможно, её сняли с публикации или у вас нет доступа."
+            action={<ButtonLink to={routes.home()}>На главную</ButtonLink>}
+          />
+        </div>
       )}
 
       {result.status === 'ready' && (
         <ArticleReader
           key={result.detail.revision.id}
           detail={result.detail}
-          badges={
-            result.detail.article.status !== 'published' && (
-              <ArticleStatusBadge status={result.detail.article.status} />
-            )
+          eyebrow={[space?.name, ...collectionPath]
+            .filter(Boolean)
+            .join('  /  ')}
+          status={
+            <ArticleStatusBadge
+              status={
+                result.version === 'draft'
+                  ? 'draft'
+                  : result.detail.article.status
+              }
+            />
           }
           notice={
             <ArticleNotice

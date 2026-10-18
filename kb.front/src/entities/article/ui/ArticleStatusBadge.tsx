@@ -2,11 +2,21 @@ import { Badge } from '@shared/ui/badge';
 import { STATUS_LABELS, type ArticleStatus } from '../model/types';
 
 const TONES = {
-  draft: 'warning',
-  published: 'success',
+  draft: 'accent',
+  published: 'neutral',
   archived: 'neutral',
 } as const;
 
-export function ArticleStatusBadge({ status }: { status: ArticleStatus }) {
-  return <Badge tone={TONES[status]}>{STATUS_LABELS[status]}</Badge>;
+export function ArticleStatusBadge({
+  status,
+  size,
+}: {
+  status: ArticleStatus;
+  size?: 'md' | 'sm';
+}) {
+  return (
+    <Badge tone={TONES[status]} size={size}>
+      {STATUS_LABELS[status]}
+    </Badge>
+  );
 }

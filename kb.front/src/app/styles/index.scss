@@ -23,6 +23,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+@media (max-width: 900px) {
+  :root {
+    --page-gutter: 24px;
+  }
+}
+
 h1,
 h2,
 h3,
@@ -52,7 +58,7 @@ a {
 }
 
 ::selection {
-  background: var(--color-accent-soft-border);
+  background: var(--color-accent-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {

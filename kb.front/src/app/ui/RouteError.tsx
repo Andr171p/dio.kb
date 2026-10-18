@@ -11,7 +11,7 @@ export function RouteError() {
 
   return (
     <div className={styles.splash}>
-      <LogoMark size={36} />
+      <LogoMark size={44} />
       <p className={styles.error}>
         Что-то пошло не так. Обновите страницу — если ошибка повторится,
         сообщите администратору.

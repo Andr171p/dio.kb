@@ -1,19 +1,14 @@
-.combo {
-  display: inline-flex;
-  gap: 3px;
-}
-
 .key {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border: 1px solid var(--color-border);
-  border-bottom-width: 2px;
-  border-radius: 5px;
-  background: var(--color-canvas);
-  color: var(--color-text-tertiary);
-  font: 500 11px/1 var(--font-mono);
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font: 400 11px/1 var(--font-mono);
+  white-space: pre;
 }

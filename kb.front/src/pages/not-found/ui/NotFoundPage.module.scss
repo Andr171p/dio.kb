@@ -1,0 +1,6 @@
+@use '@shared/styles/mixins' as *;
+
+.page {
+  @include page-container;
+  padding-top: var(--space-12);
+}

@@ -16,17 +16,9 @@ export type SidebarDialog =
       spaceId: string;
       node: NavigationNode;
       mode: 'add' | 'move';
-    }
-  | {
-      kind: 'access';
-      resource: { type: 'space' | 'collection' | 'article'; id: string };
-      title: string;
-      spaceId?: string;
     };
 
 interface SidebarState {
-  /** Свёрнут на десктопе */
-  collapsed: boolean;
   /** Открыт как выезжающая панель на мобильных */
   mobileOpen: boolean;
   /** Раскрытые пространства и коллекции */
@@ -37,14 +29,13 @@ interface SidebarState {
 export const useSidebar = create<SidebarState>()(
   persist(
     (): SidebarState => ({
-      collapsed: false,
       mobileOpen: false,
       expanded: {},
       dialog: null,
     }),
     {
       name: 'dios.kb.sidebar',
-      partialize: ({ collapsed, expanded }) => ({ collapsed, expanded }),
+      partialize: ({ expanded }) => ({ expanded }),
     },
   ),
 );
@@ -67,10 +58,6 @@ export function revealInSidebar(ids: string[]) {
       ...Object.fromEntries(ids.map((id) => [id, true])),
     },
   }));
-}
-
-export function toggleSidebar() {
-  useSidebar.setState(({ collapsed }) => ({ collapsed: !collapsed }));
 }
 
 export function setMobileSidebarOpen(mobileOpen: boolean) {

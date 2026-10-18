@@ -1,17 +1,18 @@
-import { ChevronRight, FileText, SearchX } from 'lucide-react';
-import { Fragment, type ReactNode } from 'react';
+import { ArrowRight } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { markdownToSnippet, type SearchResult } from '@entities/search';
 import type { Space } from '@entities/space';
 import { routes } from '@shared/config/routes';
-import { formatShortDate } from '@shared/lib/format';
+import { pluralize } from '@shared/lib/format';
+import { Button } from '@shared/ui/button';
 import { EmptyState } from '@shared/ui/empty-state';
-import { Notice } from '@shared/ui/notice';
 import { Skeleton } from '@shared/ui/skeleton';
 import type { SearchState } from '../model/use-search';
 import styles from './SearchResults.module.scss';
 
 const MIN_TERM_LENGTH = 3;
+const SECTION_LINKS_LIMIT = 3;
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -38,7 +39,24 @@ function highlight(text: string, query: string): ReactNode {
   return parts;
 }
 
-function ResultCard({
+/** Разделы статьи, где нашлись совпадения: ссылка ведёт прямо к заголовку. */
+function sectionLinks(result: SearchResult) {
+  const seen = new Set<string>();
+  return result.fragments
+    .filter((fragment) => fragment.anchor && fragment.headingPath.length > 0)
+    .map((fragment) => ({
+      anchor: fragment.anchor,
+      title: fragment.headingPath[fragment.headingPath.length - 1],
+    }))
+    .filter(({ anchor }) => {
+      if (!anchor || seen.has(anchor)) return false;
+      seen.add(anchor);
+      return true;
+    })
+    .slice(0, SECTION_LINKS_LIMIT);
+}
+
+function ResultItem({
   result,
   space,
   query,
@@ -48,46 +66,41 @@ function ResultCard({
   query: string;
 }) {
   const { article, fragments } = result;
-  const firstAnchor = fragments[0]?.anchor;
+  const [first] = fragments;
+  const sections = sectionLinks(result);
+  const path = [space?.name, ...(first?.headingPath.slice(0, -1) ?? [])]
+    .filter(Boolean)
+    .join(' / ');
 
   return (
     <li className={styles.result}>
+      {path && <p className={styles.path}>{path}</p>}
       <Link
-        to={routes.article(article.id, firstAnchor)}
-        className={styles.titleLink}
+        to={routes.article(article.id, first?.anchor)}
+        className={styles.title}
       >
-        <FileText size={16} className={styles.titleIcon} aria-hidden />
-        <span className={styles.title}>{article.title}</span>
+        {article.title}
       </Link>
-      <div className={styles.meta}>
-        {space && <span>{space.name}</span>}
-        <span aria-hidden>·</span>
-        <span>опубликовано {formatShortDate(article.publishedAt)}</span>
-      </div>
-      <ul className={styles.fragments}>
-        {fragments.map((fragment) => (
-          <li key={fragment.chunkId}>
-            <Link
-              to={routes.article(article.id, fragment.anchor)}
-              className={styles.fragment}
-            >
-              {fragment.headingPath.length > 0 && (
-                <span className={styles.path}>
-                  {fragment.headingPath.map((heading, index) => (
-                    <Fragment key={index}>
-                      {index > 0 && <ChevronRight size={12} aria-hidden />}
-                      <span>{heading}</span>
-                    </Fragment>
-                  ))}
-                </span>
-              )}
-              <span className={styles.snippet}>
-                {highlight(markdownToSnippet(fragment.text, 280), query)}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {first && (
+        <p className={styles.snippet}>
+          {highlight(markdownToSnippet(first.text, 240), query)}
+        </p>
+      )}
+      {sections.length > 0 && (
+        <ul className={styles.sections}>
+          {sections.map((section) => (
+            <li key={section.anchor}>
+              <Link
+                to={routes.article(article.id, section.anchor)}
+                className={styles.section}
+              >
+                {section.title}
+                <ArrowRight size={13} aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </li>
   );
 }
@@ -96,13 +109,30 @@ interface SearchResultsProps {
   state: SearchState;
   query: string;
   spaces: Space[];
+  /** Повторить запрос после ошибки */
+  onRetry: () => void;
+  /** Снять фильтры по пространствам, если они заданы */
+  onResetFilters?: () => void;
 }
 
-/** Выдача поиска: статьи с лучшими фрагментами. Простые поверхности — без визуального шума. */
-export function SearchResults({ state, query, spaces }: SearchResultsProps) {
+/** Выдача поиска: статьи с лучшими фрагментами. Совпадения одной статьи сгруппированы. */
+export function SearchResults({
+  state,
+  query,
+  spaces,
+  onRetry,
+  onResetFilters,
+}: SearchResultsProps) {
   const spaceById = new Map(spaces.map((space) => [space.id, space]));
 
-  if (state.status === 'error') return <Notice>{state.error}</Notice>;
+  if (state.status === 'error')
+    return (
+      <EmptyState
+        title="Не удалось загрузить результаты"
+        description="Запрос сохранён. Проверьте подключение и повторите попытку."
+        action={<Button onClick={onRetry}>Повторить поиск</Button>}
+      />
+    );
 
   const items =
     state.status === 'ready'
@@ -114,13 +144,9 @@ export function SearchResults({ state, query, spaces }: SearchResultsProps) {
   if (state.status === 'loading' && !items)
     return (
       <div className={styles.skeletons} aria-busy>
-        {[0, 1, 2].map((index) => (
-          <div key={index} className={styles.skeleton}>
-            <Skeleton height={18} width="45%" />
-            <Skeleton height={12} width="25%" />
-            <Skeleton height={44} />
-          </div>
-        ))}
+        <Skeleton height={10} width="40%" />
+        <Skeleton height={10} width="70%" />
+        <Skeleton height={10} width="55%" />
       </div>
     );
 
@@ -129,18 +155,31 @@ export function SearchResults({ state, query, spaces }: SearchResultsProps) {
   if (items.length === 0)
     return (
       <EmptyState
-        icon={SearchX}
-        title="Ничего не найдено"
-        description="Попробуйте описать проблему другими словами или убрать фильтр по пространствам. Только что опубликованные статьи появляются в поиске через несколько секунд."
+        title={`По запросу «${query.trim()}» нет результатов`}
+        description={
+          onResetFilters
+            ? 'Проверьте формулировку или попробуйте искать во всех пространствах.'
+            : 'Проверьте формулировку или опишите вопрос другими словами. Только что опубликованные статьи появляются в поиске через несколько секунд.'
+        }
+        action={
+          onResetFilters && (
+            <Button onClick={onResetFilters}>Сбросить фильтры</Button>
+          )
+        }
       />
     );
 
   return (
     <div aria-busy={state.status === 'loading'} className={styles.wrapper}>
-      <p className={styles.count}>Найдено статей: {items.length}</p>
+      <h2 className={styles.count}>
+        Найдено {pluralize(items.length, ['статья', 'статьи', 'статей'])}
+      </h2>
+      <p className={styles.hint}>
+        Совпадения из одной статьи собраны вместе. Откройте нужный раздел.
+      </p>
       <ul className={styles.list}>
         {items.map((result) => (
-          <ResultCard
+          <ResultItem
             key={result.article.id}
             result={result}
             space={spaceById.get(result.article.spaceId)}

@@ -1,17 +1,20 @@
+@use '@shared/styles/mixins' as *;
+
+/** Статус-чип 30 px: «Опубликовано», «Черновик», «Архив» */
 .badge {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  height: 20px;
+  @include chip;
+}
+
+.sm {
+  height: 22px;
   padding: 0 var(--space-2);
-  border-radius: 6px;
-  font: var(--text-label);
-  white-space: nowrap;
+  border-radius: 11px;
+  font-size: 12px;
 }
 
 .neutral {
-  background: var(--color-surface);
-  color: var(--color-text-tertiary);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
 }
 
 .success {
@@ -21,7 +24,7 @@
 
 .accent {
   background: var(--color-accent-soft);
-  color: var(--color-accent-icon);
+  color: var(--color-accent-text);
 }
 
 .warning {

@@ -1,12 +1,13 @@
 import clsx from 'clsx';
 import {
   ArrowUpRight,
-  Home,
+  Clock,
+  House,
   LogOut,
-  PanelLeftClose,
   Plus,
   Search,
-  TextSearch,
+  X,
+  type LucideIcon,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router';
@@ -20,10 +21,8 @@ import { loadSpaces, useSpaces } from '@entities/space';
 import { ThemeToggle } from '@features/toggle-theme';
 import { env } from '@shared/config/env';
 import { routes } from '@shared/config/routes';
-import { MOD_KEY_LABEL } from '@shared/lib/hooks';
 import { Avatar } from '@shared/ui/avatar';
 import { IconButton } from '@shared/ui/button';
-import { Kbd } from '@shared/ui/kbd';
 import { Logo } from '@shared/ui/logo';
 import { Menu, MenuItem, MenuSeparator } from '@shared/ui/menu';
 import { usePopover } from '@shared/ui/popover';
@@ -31,15 +30,35 @@ import { Skeleton } from '@shared/ui/skeleton';
 import {
   openSidebarDialog,
   setMobileSidebarOpen,
-  toggleSidebar,
   useSidebar,
 } from '../model/sidebar-store';
 import { SpaceTree } from './NavigationTree';
 import { SidebarDialogs } from './SidebarDialogs';
 import styles from './AppSidebar.module.scss';
 
-interface AppSidebarProps {
-  onOpenSearch: () => void;
+function NavItem({
+  to,
+  icon: Icon,
+  end,
+  children,
+}: {
+  to: string;
+  icon: LucideIcon;
+  end?: boolean;
+  children: string;
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        clsx(styles.navItem, isActive && styles.navActive)
+      }
+    >
+      <Icon size={17} strokeWidth={1.7} aria-hidden />
+      {children}
+    </NavLink>
+  );
 }
 
 function UserMenu() {
@@ -52,7 +71,7 @@ function UserMenu() {
   return (
     <>
       <button type="button" className={styles.user} {...triggerProps}>
-        <Avatar name={name} size={28} />
+        <Avatar name={name} size={30} />
         <span className={styles.userText}>
           <span className={styles.userName}>{name}</span>
           <span className={styles.userEmail}>{user.email}</span>
@@ -74,11 +93,10 @@ function UserMenu() {
   );
 }
 
-/** Навигация по базе знаний. Стеклянная панель поверх фона приложения. */
-export function AppSidebar({ onOpenSearch }: AppSidebarProps) {
+/** Навигация по базе знаний: разделы, пространства с деревом коллекций и профиль. */
+export function AppSidebar() {
   const user = useCurrentUser();
   const { status, items: spaces, error } = useSpaces();
-  const collapsed = useSidebar((state) => state.collapsed);
   const mobileOpen = useSidebar((state) => state.mobileOpen);
   const location = useLocation();
 
@@ -99,11 +117,7 @@ export function AppSidebar({ onOpenSearch }: AppSidebarProps) {
         aria-hidden
       />
       <aside
-        className={clsx(
-          styles.sidebar,
-          collapsed && styles.collapsed,
-          mobileOpen && styles.mobileOpen,
-        )}
+        className={clsx(styles.sidebar, mobileOpen && styles.mobileOpen)}
         aria-label="Навигация"
       >
         <div className={styles.header}>
@@ -111,46 +125,23 @@ export function AppSidebar({ onOpenSearch }: AppSidebarProps) {
             <Logo />
           </NavLink>
           <IconButton
-            icon={PanelLeftClose}
-            label="Скрыть панель"
-            className={styles.collapseButton}
-            onClick={() => {
-              if (mobileOpen) setMobileSidebarOpen(false);
-              else toggleSidebar();
-            }}
+            icon={X}
+            label="Закрыть навигацию"
+            className={styles.close}
+            onClick={() => setMobileSidebarOpen(false)}
           />
         </div>
 
-        <button
-          type="button"
-          className={styles.searchTrigger}
-          onClick={onOpenSearch}
-        >
-          <Search size={15} aria-hidden />
-          <span className={styles.searchLabel}>Поиск…</span>
-          <Kbd keys={[MOD_KEY_LABEL, 'K']} />
-        </button>
-
-        <nav className={styles.nav}>
-          <NavLink
-            to={routes.home()}
-            end
-            className={({ isActive }) =>
-              clsx(styles.navItem, isActive && styles.navActive)
-            }
-          >
-            <Home size={16} aria-hidden />
+        <nav className={styles.nav} aria-label="Разделы">
+          <NavItem to={routes.home()} icon={House} end>
             Главная
-          </NavLink>
-          <NavLink
-            to={routes.search()}
-            className={({ isActive }) =>
-              clsx(styles.navItem, isActive && styles.navActive)
-            }
-          >
-            <TextSearch size={16} aria-hidden />
-            Поиск по содержимому
-          </NavLink>
+          </NavItem>
+          <NavItem to={routes.search()} icon={Search}>
+            Поиск
+          </NavItem>
+          <NavItem to={routes.recent()} icon={Clock}>
+            Недавние
+          </NavItem>
         </nav>
 
         <div className={styles.sectionHeader}>
@@ -159,6 +150,7 @@ export function AppSidebar({ onOpenSearch }: AppSidebarProps) {
             <IconButton
               icon={Plus}
               label="Новое пространство"
+              className={styles.sectionAction}
               onClick={() => openSidebarDialog({ kind: 'create-space' })}
             />
           )}
@@ -167,9 +159,9 @@ export function AppSidebar({ onOpenSearch }: AppSidebarProps) {
         <ul role="tree" aria-label="Пространства" className={styles.tree}>
           {status === 'loading' && spaces.length === 0 && (
             <li className={styles.treeSkeleton}>
-              <Skeleton height={14} width="80%" />
-              <Skeleton height={14} width="60%" />
-              <Skeleton height={14} width="70%" />
+              <Skeleton height={16} width="80%" />
+              <Skeleton height={16} width="60%" />
+              <Skeleton height={16} width="70%" />
             </li>
           )}
           {status === 'error' && (
@@ -196,7 +188,10 @@ export function AppSidebar({ onOpenSearch }: AppSidebarProps) {
 
         <div className={styles.footer}>
           <UserMenu />
-          <ThemeToggle />
+          {/* На мобильных шапка не показывает тему — переключатель здесь */}
+          <span className={styles.mobileTheme}>
+            <ThemeToggle />
+          </span>
         </div>
       </aside>
       <SidebarDialogs />

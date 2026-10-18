@@ -7,11 +7,13 @@
 .list {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  font: var(--text-small);
+  color: var(--color-text-secondary);
 }
 
 .item {
@@ -26,35 +28,20 @@
 
 .link,
 .current {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 260px;
-  padding: 3px 6px;
-  border-radius: var(--radius-sm);
-  font: var(--text-control);
+  max-width: 280px;
   @include truncate;
 }
 
 .link {
-  color: var(--color-text-tertiary);
+  border-radius: 4px;
   text-decoration: none;
-  transition:
-    color var(--transition),
-    background-color var(--transition);
+  transition: color var(--transition);
 
   &:hover {
-    background: var(--color-surface-hover);
     color: var(--color-text);
   }
 }
 
-.current {
-  color: var(--color-text);
-}
-
 .separator {
-  display: flex;
   flex: none;
-  color: var(--color-text-disabled);
 }

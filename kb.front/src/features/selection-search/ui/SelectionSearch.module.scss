@@ -1,0 +1,85 @@
+@use '@shared/styles/mixins' as *;
+
+.card {
+  position: fixed;
+  inset: auto;
+  width: 420px;
+  max-width: calc(100vw - 16px);
+  margin: 0;
+  padding: 20px 22px;
+  border-radius: var(--radius-card);
+  color: var(--color-text);
+  text-align: left;
+  @include card;
+  box-shadow: var(--shadow-popover);
+
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity var(--transition),
+    transform var(--transition),
+    overlay var(--transition) allow-discrete,
+    display var(--transition) allow-discrete;
+
+  &:popover-open {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    opacity: 1;
+    transform: none;
+
+    @starting-style {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}
+
+.term {
+  font: 600 18px/1.5 var(--font-ui);
+  @include line-clamp(2);
+}
+
+.article {
+  margin-top: 10px;
+  border-radius: 4px;
+  font: 500 16px/1.5 var(--font-ui);
+  color: var(--color-text);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-accent-text);
+  }
+}
+
+.text {
+  margin-top: 6px;
+  font: 400 16px/1.6 var(--font-text);
+  color: var(--color-text-body);
+  @include line-clamp(3);
+}
+
+.source {
+  margin-top: 12px;
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  border-radius: 4px;
+  font: 500 14px/1.5 var(--font-ui);
+  color: var(--color-accent-text);
+  text-decoration: none;
+}

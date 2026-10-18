@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import clsx from 'clsx';
 import { Fragment, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import styles from './Breadcrumbs.module.scss';
@@ -8,9 +8,15 @@ export interface Crumb {
   to?: string;
 }
 
-export function Breadcrumbs({ items }: { items: Crumb[] }) {
+export function Breadcrumbs({
+  items,
+  className,
+}: {
+  items: Crumb[];
+  className?: string;
+}) {
   return (
-    <nav aria-label="Путь" className={styles.breadcrumbs}>
+    <nav aria-label="Путь" className={clsx(styles.breadcrumbs, className)}>
       <ol className={styles.list}>
         {items.map((item, index) => {
           const last = index === items.length - 1;
@@ -32,7 +38,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
               </li>
               {!last && (
                 <li aria-hidden className={styles.separator}>
-                  <ChevronRight size={14} />
+                  /
                 </li>
               )}
             </Fragment>

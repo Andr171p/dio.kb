@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import type { Element, ElementContent } from 'hast';
 import { Check, Copy, Link2 } from 'lucide-react';
-import { memo, useRef, type ComponentProps, type ReactNode } from 'react';
+import { memo, use, useRef, type ComponentProps, type ReactNode } from 'react';
 import Markdown, { defaultUrlTransform, type Components } from 'react-markdown';
 import { Link } from 'react-router';
 import rehypeHighlight from 'rehype-highlight';
@@ -14,6 +14,11 @@ import { codeLanguageLabel, codeLanguages } from '@shared/lib/code-languages';
 import { useCopyToClipboard } from '@shared/lib/hooks';
 import { MediaImage } from '@shared/ui/media-image';
 import { toast } from '@shared/ui/toast';
+import {
+  ChecklistContext,
+  toggleChecklistItem,
+  useChecklists,
+} from '../model/checklists';
 import styles from './ArticleContent.module.scss';
 
 /** Разрешаем `media://` для вложений; остальное — стандартная санитизация (без javascript: и т.п.). */
@@ -92,6 +97,66 @@ function ArticleLink({ href = '', children, ...props }: ComponentProps<'a'>) {
     <LinkHoverPreview href={href}>{link}</LinkHoverPreview>
   ) : (
     link
+  );
+}
+
+/** Позиция узла в Markdown — стабильный ключ пункта чеклиста в пределах редакции. */
+function itemId(revisionKey: string, node: Element | undefined): string | null {
+  const offset = node?.position?.start.offset;
+  return offset === undefined ? null : `${revisionKey}:${offset}`;
+}
+
+/** Чекбоксы пунктов, которые входят в список (а не во вложенные списки). */
+function taskInputs(list: Element | undefined): Element[] {
+  return (list?.children ?? []).flatMap((child) =>
+    child.type === 'element' && child.tagName === 'li'
+      ? child.children.filter(
+          (item): item is Element =>
+            item.type === 'element' &&
+            item.tagName === 'input' &&
+            item.properties.type === 'checkbox',
+        )
+      : [],
+  );
+}
+
+function TaskCheckbox({
+  node,
+  checked: initial,
+  ...props
+}: ComponentProps<'input'> & { node?: Element }) {
+  const revisionKey = use(ChecklistContext);
+  const id = revisionKey ? itemId(revisionKey, node) : null;
+  const mark = useChecklists((state) => (id ? state.marks[id] : undefined));
+
+  if (!id) return <input {...props} checked={initial} disabled readOnly />;
+
+  return (
+    <input
+      type="checkbox"
+      checked={mark ?? Boolean(initial)}
+      aria-label="Отметить пункт"
+      onChange={(event) => toggleChecklistItem(id, event.target.checked)}
+    />
+  );
+}
+
+function TaskListProgress({ list }: { list: Element | undefined }) {
+  const revisionKey = use(ChecklistContext);
+  const inputs = taskInputs(list);
+  const marks = useChecklists((state) => state.marks);
+
+  if (!revisionKey || inputs.length < 2) return null;
+
+  const done = inputs.filter((input) => {
+    const id = itemId(revisionKey, input);
+    return (id && marks[id]) ?? Boolean(input.properties.checked);
+  }).length;
+
+  return (
+    <p className={styles.taskProgress}>
+      Выполнено {done} из {inputs.length}
+    </p>
   );
 }
 
@@ -174,6 +239,21 @@ function Heading({
 
 const components: Components = {
   a: ({ node: _node, ...props }) => <ArticleLink {...props} />,
+  input: ({ node, ...props }) =>
+    props.type === 'checkbox' ? (
+      <TaskCheckbox node={node} {...props} />
+    ) : (
+      <input {...props} />
+    ),
+  ul: ({ node, className, ...props }) =>
+    className?.includes('contains-task-list') ? (
+      <>
+        <ul className={className} {...props} />
+        <TaskListProgress list={node} />
+      </>
+    ) : (
+      <ul className={className} {...props} />
+    ),
   p: ({ node, children, ...props }) => {
     const href = standaloneLink(node);
     if (href) {
@@ -239,6 +319,8 @@ const components: Components = {
 interface ArticleContentProps {
   markdown: string;
   className?: string;
+  /** Редакция: если задана, пункты чеклистов можно отмечать при чтении */
+  checklistKey?: string;
 }
 
 /**
@@ -248,20 +330,23 @@ interface ArticleContentProps {
 export const ArticleContent = memo(function ArticleContent({
   markdown,
   className,
+  checklistKey,
 }: ArticleContentProps) {
   return (
-    <div className={clsx(styles.content, className)}>
-      <Markdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[
-          rehypeSlug,
-          [rehypeHighlight, { detect: false, languages: codeLanguages }],
-        ]}
-        components={components}
-        urlTransform={urlTransform}
-      >
-        {markdown}
-      </Markdown>
-    </div>
+    <ChecklistContext value={checklistKey ?? null}>
+      <div className={clsx(styles.content, className)}>
+        <Markdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[
+            rehypeSlug,
+            [rehypeHighlight, { detect: false, languages: codeLanguages }],
+          ]}
+          components={components}
+          urlTransform={urlTransform}
+        >
+          {markdown}
+        </Markdown>
+      </div>
+    </ChecklistContext>
   );
 });

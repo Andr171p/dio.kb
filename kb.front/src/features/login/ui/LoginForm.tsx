@@ -1,4 +1,3 @@
-import { LogIn } from 'lucide-react';
 import { useActionState } from 'react';
 import { login } from '@entities/session';
 import { ApiError, describeError } from '@shared/api';
@@ -61,7 +60,6 @@ export function LoginForm() {
       <Button
         type="submit"
         variant="primary"
-        icon={LogIn}
         loading={pending}
         className={styles.submit}
       >

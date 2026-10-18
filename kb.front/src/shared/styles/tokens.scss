@@ -1,29 +1,41 @@
-// Семантические токены DIOS Knowledge. Имена одинаковые для тёмной и светлой темы.
+// Семантические токены DIOS Knowledge по макету «DIOS · Knowledge redesign».
+// Имена одинаковые для всех тем.
 
 :root {
-  // Интерфейс, заголовки, метаданные и код — JetBrains Mono; длинный текст статей — Inter
-  --font-mono:
-    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular,
-    Menlo, Consolas, monospace;
+  // Интерфейс и текст статей — Inter; подписи секций, клавиши и код — JetBrains Mono
   --font-text:
     'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto,
     sans-serif;
-  --font-ui: var(--font-mono);
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular,
+    Menlo, Consolas, monospace;
+  --font-ui: var(--font-text);
 
   // Типографика интерфейса
-  --text-display: 600 30px/38px var(--font-ui);
-  --text-title: 600 20px/28px var(--font-ui);
-  --text-subtitle: 600 15px/22px var(--font-ui);
-  --text-control: 400 13px/20px var(--font-ui);
-  --text-caption: 400 12px/18px var(--font-ui);
-  --text-label: 500 11px/16px var(--font-ui);
-  --text-code: 400 13px/21px var(--font-mono);
+  --text-display: 600 36px/1.2 var(--font-ui);
+  --text-page-title: 600 34px/1.25 var(--font-ui);
+  --text-title: 600 23px/1.5 var(--font-ui);
+  --text-card-title: 600 21px/1.5 var(--font-ui);
+  --text-subtitle: 600 17px/1.5 var(--font-ui);
+  --text-item: 500 17px/1.5 var(--font-ui);
+  --text-lead: 400 17px/1.5 var(--font-ui);
+  --text-nav: 400 14px/1.5 var(--font-ui);
+  --text-button: 500 15px/1.5 var(--font-ui);
+  --text-control: 400 15px/1.5 var(--font-ui);
+  --text-small: 400 14px/1.5 var(--font-ui);
+  --text-meta: 400 13px/1.5 var(--font-ui);
+  --text-chip: 500 13px/1.5 var(--font-ui);
+  --text-caption: 400 12px/1.5 var(--font-ui);
+  --text-label: 600 11px/1.5 var(--font-mono);
+  --text-code: 400 15px/1.6 var(--font-mono);
 
-  // Типографика статьи
-  --text-body: 400 16px/1.72 var(--font-text);
-  --text-lead: 400 18px/1.6 var(--font-text);
+  // Типографика статьи (размер и интервал меняются в настройках чтения)
+  --reading-size: 18px;
+  --reading-leading: 1.65;
+  --text-body: 400 var(--reading-size) / var(--reading-leading) var(--font-text);
+  --text-summary: 400 17px/1.55 var(--font-text);
 
-  // Ритм
+  // Ритм: шаг 4 px
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -35,163 +47,216 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  // Скругления
-  --radius-sm: 6px;
+  // Скругления: 8–12 px
+  --radius-sm: 5px;
   --radius-control: 8px;
-  --radius-card: 12px;
-  --radius-panel: 16px;
+  --radius-card: 10px;
+  --radius-panel: 12px;
   --radius-round: 999px;
 
   // Геометрия
-  --sidebar-width: 280px;
-  --sidebar-inset: 8px;
-  --reading-width: 760px;
-  --toc-width: 220px;
-  --control-height: 36px;
-  --control-height-sm: 30px;
-  --topbar-height: 56px;
+  --sidebar-width: 248px;
+  --content-width: 1048px;
+  --page-gutter: 64px;
+  --reading-width: 740px;
+  --rail-width: 212px;
+  --control-height: 40px;
+  --control-height-sm: 32px;
+  --chip-height: 30px;
+  --search-height: 64px;
+  --topbar-height: 64px;
 
   --transition: 140ms ease;
   --transition-slow: 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  // Стекло: только навигация, глобальный поиск и плавающая панель редактора
-  --glass-blur: blur(22px) saturate(170%);
+  // Деликатное стекло: только плавающие панели (поиск ⌘K, панель редактора, настройки чтения)
+  --glass-blur: blur(16px) saturate(140%);
 }
 
 :root,
-[data-theme='dark'] {
-  color-scheme: dark;
-
-  --color-canvas: #222222;
-  --color-sidebar: #1c1c1c;
-  --color-surface: #2e2e2e;
-  --color-surface-hover: #353535;
-  --color-surface-active: #3c3c3c;
-  --color-elevated: #282828;
-  --color-paper: #252525;
-  --color-code: #1b1b1b;
-  --color-backdrop: rgb(0 0 0 / 55%);
-
-  --color-border: #333333;
-  --color-border-strong: #474747;
-
-  --color-text: #fafaf7;
-  // Основной текст статьи: чуть мягче заголовков, чтобы длинный текст не «светился»
-  --color-text-body: #e4e4df;
-  --color-text-secondary: #b9b9b5;
-  --color-text-tertiary: #8e8e8a;
-  --color-text-disabled: #64645f;
-
-  --color-accent: #bb252d;
-  --color-accent-hover: #d2313a;
-  --color-accent-pressed: #a11f26;
-  --color-accent-disabled: #5c2023;
-  --color-accent-soft: #3a2427;
-  --color-accent-soft-border: #5c2629;
-  --color-accent-icon: #ea7d83;
-  --color-accent-text: #f09398;
-  --color-on-accent: #ffffff;
-  --color-on-accent-disabled: rgb(255 255 255 / 40%);
-  --color-focus: #ea7d83;
-
-  --color-success: #6cc28a;
-  --color-success-soft: #1e3326;
-  --color-warning: #e3b45a;
-  --color-warning-soft: #3a3020;
-  --color-danger: #f0868b;
-  --color-danger-soft: #3a2124;
-  --color-info: #7fb2e8;
-  --color-info-soft: #1f2c3a;
-
-  --color-mark: rgb(227 180 90 / 28%);
-
-  --glass-bg: rgb(30 30 30 / 68%);
-  --glass-bg-strong: rgb(36 36 36 / 82%);
-  --glass-border: rgb(255 255 255 / 7%);
-  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 5%);
-  --glass-shadow: 0 18px 48px rgb(0 0 0 / 42%);
-
-  // Мягкие пятна фона: дают стеклу, что размывать
-  --canvas-glow-1: rgb(187 37 45 / 13%);
-  --canvas-glow-2: rgb(110 110 120 / 10%);
-
-  --shadow-popover: 0 16px 40px rgb(0 0 0 / 45%);
-  --shadow-card: 0 1px 0 rgb(255 255 255 / 3%) inset;
-
-  // Подсветка синтаксиса
-  --syntax-comment: #7c7c78;
-  --syntax-keyword: #e98a8f;
-  --syntax-string: #9ccf8d;
-  --syntax-number: #e3b45a;
-  --syntax-function: #8fb8ea;
-  --syntax-type: #d3a6e6;
-  --syntax-variable: #e8e8e3;
-  --syntax-meta: #9fc7c4;
-}
-
 [data-theme='light'] {
   color-scheme: light;
 
   --color-canvas: #fafaf7;
   --color-sidebar: #f1f1ed;
-  --color-surface: #ebebe6;
-  --color-surface-hover: #e4e4de;
-  --color-surface-active: #dcdcd6;
+  --color-surface: #ffffff;
+  --color-surface-muted: #ebebe5;
+  --color-surface-hover: #f4f4ef;
+  --color-surface-active: #ebebe5;
   --color-elevated: #ffffff;
   --color-paper: #ffffff;
-  --color-code: #f5f5f1;
-  --color-backdrop: rgb(28 28 28 / 28%);
+  --color-code: #f1f1ed;
+  --color-backdrop: rgb(34 34 34 / 28%);
 
-  --color-border: #e5e5e5;
-  --color-border-strong: #d2d2cc;
+  --color-border: #ddddd6;
+  --color-border-strong: #c8c8c0;
 
   --color-text: #222222;
-  --color-text-body: #2b2b2b;
-  --color-text-secondary: #53534f;
-  --color-text-tertiary: #7d7d78;
+  --color-text-body: #353532;
+  --color-text-secondary: #666660;
+  --color-text-tertiary: #666660;
   --color-text-disabled: #9b9b98;
 
   --color-accent: #bb252d;
-  --color-accent-hover: #d2313a;
-  --color-accent-pressed: #a11f26;
+  --color-accent-hover: #a8212a;
+  --color-accent-pressed: #931c24;
   --color-accent-disabled: #e6b8bb;
-  --color-accent-soft: #f9e9ea;
-  --color-accent-soft-border: #eebfc2;
-  --color-accent-icon: #bb252d;
+  --color-accent-soft: #f8e9e9;
+  --color-accent-soft-border: #efd0d1;
+  --color-accent-icon: #a8212a;
   --color-accent-text: #a8212a;
   --color-on-accent: #ffffff;
   --color-on-accent-disabled: rgb(255 255 255 / 75%);
-  --color-focus: #d8545b;
+  --color-focus: #bb252d;
 
-  --color-success: #2e7a4a;
-  --color-success-soft: #e3f2e8;
-  --color-warning: #8a5d09;
-  --color-warning-soft: #faf0dc;
-  --color-danger: #b3262e;
-  --color-danger-soft: #f9e9ea;
+  --color-success: #2e7049;
+  --color-success-soft: #e9f2eb;
+  --color-warning: #805a17;
+  --color-warning-soft: #f8f0df;
+  --color-danger: #a8212a;
+  --color-danger-soft: #f8e9e9;
   --color-info: #2a5f9e;
   --color-info-soft: #e5eef8;
 
   --color-mark: rgb(240 190 70 / 35%);
 
-  --glass-bg: rgb(246 246 242 / 66%);
-  --glass-bg-strong: rgb(252 252 250 / 84%);
-  --glass-border: rgb(0 0 0 / 7%);
-  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 70%);
-  --glass-shadow: 0 18px 48px rgb(34 34 34 / 12%);
+  --glass-bg: rgb(255 255 255 / 94%);
+  --glass-border: var(--color-border);
+  --glass-shadow: 0 12px 32px rgb(34 34 34 / 10%);
 
-  --canvas-glow-1: rgb(187 37 45 / 7%);
-  --canvas-glow-2: rgb(120 120 110 / 9%);
-
-  --shadow-popover: 0 16px 40px rgb(34 34 34 / 14%);
-  --shadow-card: 0 1px 2px rgb(34 34 34 / 4%);
+  --shadow-popover: 0 12px 32px rgb(34 34 34 / 12%);
 
   --syntax-comment: #8a8a85;
-  --syntax-keyword: #b3262e;
-  --syntax-string: #2e7a4a;
-  --syntax-number: #9a5b00;
+  --syntax-keyword: #a8212a;
+  --syntax-string: #2e7049;
+  --syntax-number: #805a17;
   --syntax-function: #2a5f9e;
   --syntax-type: #7a3d9e;
   --syntax-variable: #222222;
+  --syntax-meta: #276f6a;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-canvas: #222222;
+  --color-sidebar: #1c1c1c;
+  --color-surface: #272727;
+  --color-surface-muted: #32322f;
+  --color-surface-hover: #2c2c2a;
+  --color-surface-active: #32322f;
+  --color-elevated: #272727;
+  --color-paper: #272727;
+  --color-code: #1c1c1c;
+  --color-backdrop: rgb(0 0 0 / 55%);
+
+  --color-border: #41413d;
+  --color-border-strong: #55554f;
+
+  --color-text: #fafaf7;
+  --color-text-body: #deded8;
+  --color-text-secondary: #b0b0a8;
+  --color-text-tertiary: #b0b0a8;
+  --color-text-disabled: #6b6b66;
+
+  --color-accent: #bb252d;
+  --color-accent-hover: #cc2f37;
+  --color-accent-pressed: #a11f26;
+  --color-accent-disabled: #5c2023;
+  --color-accent-soft: #3d272a;
+  --color-accent-soft-border: #5a3236;
+  --color-accent-icon: #f09499;
+  --color-accent-text: #f09499;
+  --color-on-accent: #ffffff;
+  --color-on-accent-disabled: rgb(255 255 255 / 40%);
+  --color-focus: #f09499;
+
+  --color-success: #95cea7;
+  --color-success-soft: #273b2d;
+  --color-warning: #e6c17d;
+  --color-warning-soft: #3b3323;
+  --color-danger: #f09499;
+  --color-danger-soft: #3d272a;
+  --color-info: #8fb8ea;
+  --color-info-soft: #1f2c3a;
+
+  --color-mark: rgb(227 180 90 / 28%);
+
+  --glass-bg: rgb(39 39 39 / 94%);
+  --glass-border: var(--color-border);
+  --glass-shadow: 0 12px 32px rgb(0 0 0 / 40%);
+
+  --shadow-popover: 0 12px 32px rgb(0 0 0 / 45%);
+
+  --syntax-comment: #8c8c86;
+  --syntax-keyword: #f09499;
+  --syntax-string: #95cea7;
+  --syntax-number: #e6c17d;
+  --syntax-function: #8fb8ea;
+  --syntax-type: #d3a6e6;
+  --syntax-variable: #deded8;
+  --syntax-meta: #9fc7c4;
+}
+
+// Сепия — тема настроек чтения: тёплая бумага на основе светлой палитры
+[data-theme='sepia'] {
+  color-scheme: light;
+
+  --color-canvas: #f6efe1;
+  --color-sidebar: #efe6d3;
+  --color-surface: #fbf6ec;
+  --color-surface-muted: #e9dfca;
+  --color-surface-hover: #f2ead9;
+  --color-surface-active: #e9dfca;
+  --color-elevated: #fbf6ec;
+  --color-paper: #fbf6ec;
+  --color-code: #efe6d3;
+  --color-backdrop: rgb(60 45 25 / 28%);
+
+  --color-border: #ddd0b6;
+  --color-border-strong: #c9b996;
+
+  --color-text: #2f2617;
+  --color-text-body: #3d3222;
+  --color-text-secondary: #6e604a;
+  --color-text-tertiary: #6e604a;
+  --color-text-disabled: #a5977e;
+
+  --color-accent: #bb252d;
+  --color-accent-hover: #a8212a;
+  --color-accent-pressed: #931c24;
+  --color-accent-disabled: #e2b6a8;
+  --color-accent-soft: #f3dfd6;
+  --color-accent-soft-border: #e8c6b9;
+  --color-accent-icon: #a8212a;
+  --color-accent-text: #a8212a;
+  --color-on-accent: #ffffff;
+  --color-on-accent-disabled: rgb(255 255 255 / 75%);
+  --color-focus: #bb252d;
+
+  --color-success: #2e7049;
+  --color-success-soft: #e3ecd8;
+  --color-warning: #7a5413;
+  --color-warning-soft: #f1e3c4;
+  --color-danger: #a8212a;
+  --color-danger-soft: #f3dfd6;
+  --color-info: #2a5f9e;
+  --color-info-soft: #e1e6e8;
+
+  --color-mark: rgb(225 170 60 / 35%);
+
+  --glass-bg: rgb(251 246 236 / 94%);
+  --glass-border: var(--color-border);
+  --glass-shadow: 0 12px 32px rgb(60 45 25 / 12%);
+
+  --shadow-popover: 0 12px 32px rgb(60 45 25 / 14%);
+
+  --syntax-comment: #8f8169;
+  --syntax-keyword: #a8212a;
+  --syntax-string: #2e7049;
+  --syntax-number: #7a5413;
+  --syntax-function: #2a5f9e;
+  --syntax-type: #7a3d9e;
+  --syntax-variable: #2f2617;
   --syntax-meta: #276f6a;
 }

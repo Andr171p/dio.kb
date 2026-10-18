@@ -4,8 +4,8 @@ export type ArticleStatus = 'draft' | 'published' | 'archived';
 
 export const STATUS_LABELS: Record<ArticleStatus, string> = {
   draft: 'Черновик',
-  published: 'Опубликована',
-  archived: 'В архиве',
+  published: 'Опубликовано',
+  archived: 'Архив',
 };
 
 /** Идентичность и жизненный цикл статьи. Содержимое — в неизменяемых редакциях. */

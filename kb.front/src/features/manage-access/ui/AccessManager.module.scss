@@ -1,0 +1,146 @@
+@use '@shared/styles/mixins' as *;
+
+.manager {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.add {
+  position: relative;
+}
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: var(--radius-panel);
+  @include card;
+  box-shadow: var(--shadow-popover);
+}
+
+.suggestion {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+
+  &[data-active] {
+    background: var(--color-surface-active);
+  }
+}
+
+.suggestionLabel {
+  font: 500 16px/1.5 var(--font-ui);
+}
+
+.suggestionMeta {
+  font: var(--text-meta);
+  color: var(--color-text-secondary);
+  @include truncate;
+}
+
+.noMatch {
+  padding: 10px 14px;
+  font: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  th {
+    padding: 0 var(--space-4) 18px 0;
+    border-bottom: 1px solid var(--color-border);
+    font: 600 13px/1.5 var(--font-ui);
+    color: var(--color-text-secondary);
+  }
+
+  th:first-child {
+    width: 43%;
+  }
+
+  th:last-child {
+    width: 20%;
+  }
+
+  td {
+    height: 89px;
+    padding: 12px var(--space-4) 12px 0;
+    border-bottom: 1px solid var(--color-border);
+    font: 400 15px/1.5 var(--font-ui);
+    vertical-align: middle;
+  }
+
+  @include mobile {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    td {
+      height: auto;
+      padding: 0;
+      border: 0;
+    }
+  }
+}
+
+.subject {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 500 17px/1.5 var(--font-ui);
+
+  svg {
+    flex: none;
+    color: var(--color-text-secondary);
+  }
+}
+
+.toggles {
+  gap: 6px;
+}
+
+.toggle {
+  min-width: 0;
+}
+
+.source {
+  font: var(--text-meta) !important;
+  color: var(--color-text-secondary);
+
+  > span {
+    margin-right: var(--space-2);
+  }
+}
+
+.inherited td:first-child {
+  color: var(--color-text);
+}
+
+.empty {
+  color: var(--color-text-secondary);
+}
