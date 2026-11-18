@@ -5,11 +5,12 @@
 **Например**
 
 `src/application/articles/access.py`
+
 ```python
 from ddf.application.exceptions import NotFoundError
 
 from src.application.access.repositories import AccessGrantRepository
-from src.application.access.services import ensure_access
+from src.application.access.guards import ensure_access
 from src.application.auth.dtos import AuthUser
 from src.domain.access.types import Permission
 from src.domain.access.vo import Resource
@@ -21,11 +22,11 @@ def _article_resources(article: Article) -> tuple[Resource, ...]:
 
 
 async def ensure_article_access(
-    article: Article,
-    auth: AuthUser,
-    required: Permission,
-    *,
-    grant_repository: AccessGrantRepository,
+        article: Article,
+        auth: AuthUser,
+        required: Permission,
+        *,
+        grant_repository: AccessGrantRepository,
 ) -> None:
     """Проверяет доступ к статье с учётом рабочего пространства."""
 

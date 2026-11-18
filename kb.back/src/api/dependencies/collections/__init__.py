@@ -1,3 +1,3 @@
-from .crud import CollectionCrudDep
+from .repositories import CollectionRepositoryDep, PlacementRepositoryDep
 
-__all__ = ["CollectionCrudDep"]
+__all__ = ["CollectionRepositoryDep", "PlacementRepositoryDep"]

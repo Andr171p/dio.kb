@@ -11,9 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.infra.outbox import OUTBOX_CHANNEL
 
 
-async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
-    """Сессия на запрос: незакоммиченные изменения откатываются при закрытии."""
-
+async def get_db(request: Request[...]) -> AsyncIterator[AsyncSession]:
     async with request.app.state.session_factory() as session:
         yield session
 

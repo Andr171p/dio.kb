@@ -16,7 +16,7 @@ async def grant_access(
     grant_repository: AccessGrantRepository,
     uow: UnitOfWork,
 ) -> AccessGrantResponse:
-    """Выдаёт права на ресурс организации; повторная выдача той же пары ресурс/субъект — 409."""
+    """Выдаёт права на ресурс организации; повторная выдача той же пары ресурс/субъект - 409."""
 
     organization_id = auth.user.organization_id
     resource = Resource(type=dto.resource.type, id=dto.resource.id)

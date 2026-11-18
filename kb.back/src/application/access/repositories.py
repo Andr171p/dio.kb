@@ -27,7 +27,9 @@ class AccessGrantRepository(Repository[AccessGrant]):
         """Возвращает ресурсы типа ``resource_type``, на которые у субъектов есть ``required``."""
 
     async def find_by_resource(
-        self, organization_id: UUID, resource: Resource
+        self,
+        organization_id: UUID,
+        resource: Resource,
     ) -> tuple[AccessGrant, ...]: ...
 
     async def resource_exists(self, organization_id: UUID, resource: Resource) -> bool:

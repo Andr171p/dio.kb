@@ -12,7 +12,7 @@ from src.domain.collections.vo import CollectionTarget, TargetType
 
 
 class RelativePosition(BaseModel):
-    """Позиция относительно соседнего размещения; без соседей — в конец коллекции."""
+    """Позиция относительно соседнего размещения; без соседей - в конец коллекции."""
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -32,9 +32,7 @@ class CreateCollectionDTO(BaseModel):
     name: str = Field(min_length=1, max_length=255, description="Имя коллекции")
     slug: str = Field(max_length=255, pattern=SLUG_PATTERN, description="Человекочитаемый фрагмент для URL")
     description: str | None = Field(default=None, min_length=1, description="Описание")
-    parent_id: UUID | None = Field(
-        default=None, description="Родительская коллекция (элемент встанет в конец)"
-    )
+    parent_id: UUID | None = Field(default=None, description="Родительская коллекция (элемент встанет в конец)")
 
 
 class UpdateCollectionDTO(BaseModel):
@@ -42,7 +40,10 @@ class UpdateCollectionDTO(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=255, description="Имя коллекции")
     slug: str | None = Field(
-        default=None, max_length=255, pattern=SLUG_PATTERN, description="Фрагмент для URL"
+        default=None,
+        max_length=255,
+        pattern=SLUG_PATTERN,
+        description="Фрагмент для URL",
     )
     description: str | None = Field(default=None, description="Описание (пустая строка очищает)")
 
@@ -71,7 +72,7 @@ class CreatePlacementDTO(BaseModel):
 class MovePlacementDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
-    collection_id: UUID | None = Field(default=None, description="Новая коллекция (по умолчанию — текущая)")
+    collection_id: UUID | None = Field(default=None, description="Новая коллекция (по умолчанию - текущая)")
     position: RelativePosition = Field(default_factory=RelativePosition, description="Позиция")
 
 
