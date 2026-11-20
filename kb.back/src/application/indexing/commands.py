@@ -15,6 +15,7 @@ class IndexArticle(BaseModel):
 
     organization_id: UUID
     article_id: UUID
+    force: bool = False
 
 
 class ReconcileIndex(BaseModel):
@@ -28,7 +29,7 @@ class ReconcileIndex(BaseModel):
         default="stale",
         description=(
             "`stale` - статьи, отсутствующие в актуальной проекции либо имеющие несовпадающий checkpoint."
-            "`rebuild` - все статьи, которые должны быть в индексе, независимо от checkpoint.",
+            "`rebuild` - все статьи, которые должны быть в индексе, независимо от checkpoint."
         ),
     )
 

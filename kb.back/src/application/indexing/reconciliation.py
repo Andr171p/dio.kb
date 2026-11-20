@@ -7,7 +7,7 @@ from uuid import UUID
 from .commands import IndexArticle, ReconcileIndex
 from .types import EnqueueIndexCommand
 
-type ReconciliationMode = Literal["stale", "full"]
+type ReconciliationMode = Literal["stale", "rebuild"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,7 +55,13 @@ async def reconcile_index(
         )
 
         for article_id in article_ids:
-            await enqueue(IndexArticle(organization_id=command.organization_id, article_id=article_id))
+            await enqueue(
+                IndexArticle(
+                    organization_id=command.organization_id,
+                    article_id=article_id,
+                    force=command.mode == "rebuild",
+                )
+            )
             queued += 1
 
         if len(article_ids) < batch_size:

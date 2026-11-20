@@ -2,9 +2,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
+from src.api.dependencies.access import GrantRepositoryDep
+from src.api.dependencies.articles import ArticleRepositoryDep, RevisionRepositoryDep
 from src.api.dependencies.auth import CurrentUser
-from src.api.dependencies.db import OutboxDep, UnitOfWorkDep
-from src.api.dependencies.repositories import ArticleRepositoryDep, GrantRepositoryDep, RevisionRepositoryDep
+from src.api.dependencies.db import DBSession, OutboxDep
 from src.application.articles import usecases
 from src.application.articles.dtos import (
     ArticleDetailResponse,
@@ -19,7 +20,11 @@ from src.application.articles.dtos import (
 router = APIRouter(prefix="/articles", tags=["Articles"])
 
 
-@router.get("/{article_id}", summary="Опубликованная редакция статьи")
+@router.get(
+    "/{article_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Опубликованная редакция статьи",
+)
 async def get_published_article(
     article_id: UUID,
     auth: CurrentUser,
@@ -36,7 +41,11 @@ async def get_published_article(
     )
 
 
-@router.get("/{article_id}/draft", summary="Текущая (редакторская) версия статьи")
+@router.get(
+    "/{article_id}/draft",
+    status_code=status.HTTP_200_OK,
+    summary="Текущая (редакторская) версия статьи",
+)
 async def get_article_draft(
     article_id: UUID,
     auth: CurrentUser,
@@ -65,7 +74,7 @@ async def revise_article(
     article_repository: ArticleRepositoryDep,
     revision_repository: RevisionRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    db: DBSession,
 ) -> ArticleDetailResponse:
     return await usecases.revise_article(
         article_id,
@@ -74,11 +83,15 @@ async def revise_article(
         article_repository=article_repository,
         revision_repository=revision_repository,
         grant_repository=grant_repository,
-        uow=uow,
+        uow=db,
     )
 
 
-@router.get("/{article_id}/revisions", summary="История редакций")
+@router.get(
+    "/{article_id}/revisions",
+    status_code=status.HTTP_200_OK,
+    summary="История редакций",
+)
 async def list_article_revisions(
     article_id: UUID,
     auth: CurrentUser,
@@ -95,7 +108,11 @@ async def list_article_revisions(
     )
 
 
-@router.get("/{article_id}/revisions/{revision_id}", summary="Получить редакцию")
+@router.get(
+    "/{article_id}/revisions/{revision_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Получить редакцию",
+)
 async def get_article_revision(
     article_id: UUID,
     revision_id: UUID,
@@ -127,7 +144,7 @@ async def restore_article_revision(
     article_repository: ArticleRepositoryDep,
     revision_repository: RevisionRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    db: DBSession,
 ) -> ArticleDetailResponse:
     return await usecases.restore_article_revision(
         article_id,
@@ -137,11 +154,15 @@ async def restore_article_revision(
         article_repository=article_repository,
         revision_repository=revision_repository,
         grant_repository=grant_repository,
-        uow=uow,
+        uow=db,
     )
 
 
-@router.post("/{article_id}/publish", summary="Опубликовать текущую редакцию")
+@router.post(
+    "/{article_id}/publish",
+    status_code=status.HTTP_200_OK,
+    summary="Опубликовать текущую редакцию",
+)
 async def publish_article(
     article_id: UUID,
     dto: PublishArticleDTO,
@@ -149,7 +170,7 @@ async def publish_article(
     article_repository: ArticleRepositoryDep,
     grant_repository: GrantRepositoryDep,
     outbox: OutboxDep,
-    uow: UnitOfWorkDep,
+    db: DBSession,
 ) -> ArticleResponse:
     return await usecases.publish_article(
         article_id,
@@ -158,18 +179,22 @@ async def publish_article(
         article_repository=article_repository,
         grant_repository=grant_repository,
         outbox=outbox,
-        uow=uow,
+        uow=db,
     )
 
 
-@router.post("/{article_id}/unpublish", summary="Снять с публикации")
+@router.post(
+    "/{article_id}/unpublish",
+    status_code=status.HTTP_200_OK,
+    summary="Снять с публикации",
+)
 async def unpublish_article(
     article_id: UUID,
     auth: CurrentUser,
     article_repository: ArticleRepositoryDep,
     grant_repository: GrantRepositoryDep,
     outbox: OutboxDep,
-    uow: UnitOfWorkDep,
+    db: DBSession,
 ) -> ArticleResponse:
     return await usecases.unpublish_article(
         article_id,
@@ -177,7 +202,7 @@ async def unpublish_article(
         article_repository=article_repository,
         grant_repository=grant_repository,
         outbox=outbox,
-        uow=uow,
+        uow=db,
     )
 
 
@@ -188,7 +213,7 @@ async def archive_article(
     article_repository: ArticleRepositoryDep,
     grant_repository: GrantRepositoryDep,
     outbox: OutboxDep,
-    uow: UnitOfWorkDep,
+    db: DBSession,
 ) -> None:
     await usecases.archive_article(
         article_id,
@@ -196,22 +221,26 @@ async def archive_article(
         article_repository=article_repository,
         grant_repository=grant_repository,
         outbox=outbox,
-        uow=uow,
+        uow=db,
     )
 
 
-@router.post("/{article_id}/restore", summary="Вернуть статью из архива (черновиком)")
+@router.post(
+    "/{article_id}/restore",
+    status_code=status.HTTP_200_OK,
+    summary="Вернуть статью из архива (черновиком)",
+)
 async def restore_article(
     article_id: UUID,
     auth: CurrentUser,
     article_repository: ArticleRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    db: DBSession,
 ) -> ArticleResponse:
     return await usecases.restore_article(
         article_id,
         auth,
         article_repository=article_repository,
         grant_repository=grant_repository,
-        uow=uow,
+        uow=db,
     )

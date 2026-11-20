@@ -1,19 +1,21 @@
-import uuid
+from uuid import uuid4
 
-from src.application.search.models import SearchScope
+from src.application.search.access import SearchScope
+from src.domain.access.vo import Resource
+from src.infra.qdrant.search_index import QdrantSearchIndex
 
 
-def test_scope_allows_space_or_direct_article_within_restriction() -> None:
-    space, other_space, article = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
-    scope = SearchScope(space_ids=frozenset({space}), article_ids=frozenset({article}))
-
-    assert scope.allows(uuid.uuid4(), space)
-    assert scope.allows(article, other_space)
-    assert not scope.allows(uuid.uuid4(), other_space)
-
-    restricted = SearchScope(
-        space_ids=frozenset({space}),
-        article_ids=frozenset({article}),
-        restrict_space_ids=frozenset({space}),
+def test_scope_filter_contains_tenant_and_allowed_resources() -> None:
+    organization, space, article = uuid4(), uuid4(), uuid4()
+    scope = SearchScope(
+        organization_id=organization,
+        resources=frozenset({Resource(type="space", id=space), Resource(type="article", id=article)}),
     )
-    assert not restricted.allows(article, other_space)
+    result = QdrantSearchIndex._scope_filter(scope, [space]).model_dump(exclude_none=True)
+    assert result["must"][0]["match"]["value"] == str(organization)
+    assert result["must"][1]["match"]["any"] == [str(space)]
+    allowed = result["must"][2]["should"]
+    assert {item["key"]: item["match"]["any"] for item in allowed} == {
+        "space_id": [str(space)],
+        "article_id": [str(article)],
+    }

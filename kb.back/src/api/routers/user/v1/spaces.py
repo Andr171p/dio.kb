@@ -2,17 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
+from src.api.dependencies.access import GrantRepositoryDep
+from src.api.dependencies.articles import ArticleQueryRepositoryDep, ArticleRepositoryDep, RevisionRepositoryDep
 from src.api.dependencies.auth import CurrentUser
+from src.api.dependencies.collections import CollectionRepositoryDep, PlacementRepositoryDep
 from src.api.dependencies.db import UnitOfWorkDep
-from src.api.dependencies.repositories import (
-    ArticleQueryRepositoryDep,
-    ArticleRepositoryDep,
-    CollectionRepositoryDep,
-    GrantRepositoryDep,
-    PlacementRepositoryDep,
-    RevisionRepositoryDep,
-    SpaceRepositoryDep,
-)
+from src.api.dependencies.spaces import SpaceRepositoryDep
 from src.application.articles import usecases as articles
 from src.application.articles.dtos import ArticleDetailResponse, ArticleSummaryResponse, CreateArticleDTO
 from src.application.collections import usecases as collections
@@ -29,9 +24,7 @@ async def list_spaces(
     space_repository: SpaceRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> list[SpaceResponse]:
-    return await spaces.list_spaces(
-        auth, space_repository=space_repository, grant_repository=grant_repository
-    )
+    return await spaces.list_spaces(auth, space_repository=space_repository, grant_repository=grant_repository)
 
 
 @router.get("/{space_id}", summary="Получить пространство")

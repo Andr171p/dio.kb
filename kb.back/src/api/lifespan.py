@@ -2,58 +2,29 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from ddf.infra.cache import InMemoryCache
-from ddf.infra.database.sqlalchemy import PostgresConfig
 from fastapi import FastAPI
 
+from src.api.dependencies.auth import iam_client
+from src.api.dependencies.db import engine
+from src.api.dependencies.links import link_preview_fetcher
+from src.api.dependencies.search import search_index, text_embedder
 from src.application.auth import Auth
-from src.infra.aitunnel import AiTunnelConfig, OpenAITextEmbedder, create_openai_client
-from src.infra.broker.tasks import TaskiqIndexingQueue, broker
-from src.infra.database.session import create_engine, create_session_factory
-from src.infra.links import HttpLinkPreviewFetcher
-from src.infra.qdrant import QdrantConfig, QdrantSearchIndex, create_qdrant_client
-from src.infra.services.iam import SrvIamClient, SrvIamConfig
+from src.infra.broker.broker import broker
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Composition root API: создаёт долгоживущие клиенты и закрывает их при остановке."""
-
-    engine = create_engine(PostgresConfig())
-    iam_client = SrvIamClient(SrvIamConfig())  # type: ignore[call-arg]
-
-    ai_config = AiTunnelConfig()  # type: ignore[call-arg]
-    openai_client = create_openai_client(ai_config)
-    embedder = OpenAITextEmbedder(
-        openai_client,
-        model=ai_config.embedding_model,
-        dimensions=ai_config.embedding_dimensions,
-        batch_size=ai_config.embedding_batch_size,
-    )
-
-    qdrant_config = QdrantConfig()
-    qdrant_client = create_qdrant_client(qdrant_config)
-    chunk_repository = QdrantSearchIndex(qdrant_client, qdrant_config)
-    await chunk_repository.ensure_collection(embedder.dimensions)
-
-    await broker.startup()
-
-    app.state.session_factory = create_session_factory(engine)
+    # noinspection PyUnresolvedReferences
     app.state.iam_client = iam_client
+    # noinspection PyUnresolvedReferences
     app.state.auth_cache = InMemoryCache[Auth]()
-    app.state.embedder = embedder
-    app.state.chunk_repository = chunk_repository
-    app.state.indexing_queue = TaskiqIndexingQueue()
-    app.state.link_preview_fetcher = link_preview_fetcher = HttpLinkPreviewFetcher()
-
+    await broker.startup()
     try:
         yield
     finally:
         await link_preview_fetcher.close()
         await broker.shutdown()
-        await qdrant_client.close()
-        await openai_client.close()
+        await search_index.close()
+        await text_embedder.close()
         await iam_client.close()
         await engine.dispose()
-
-
-__all__ = ["lifespan"]

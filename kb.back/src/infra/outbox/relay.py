@@ -17,8 +17,10 @@ from ddf.infra.outbox.worker import OutboxWorkerConfig
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from src.application.indexing.commands import IndexArticle
 from src.domain.articles.events import ArticleArchived, ArticlePublished, ArticleUnpublished
-from src.infra.broker.tasks import TaskiqIndexingQueue, broker
+from src.infra.broker.broker import broker
+from src.infra.broker.enqueue import enqueue_index_command
 from src.infra.outbox import OUTBOX_CHANNEL
 
 logger = logging.getLogger(__name__)
@@ -36,12 +38,12 @@ async def run_outbox_relay() -> None:
         echo=config.echo,
     )
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
-    indexing_queue = TaskiqIndexingQueue()
 
     async def publish(events: Sequence[Event]) -> None:
         for event in events:
             if isinstance(event, ArticlePublished | ArticleUnpublished | ArticleArchived):
-                await indexing_queue.enqueue_article(event.article_id)
+                command = IndexArticle(organization_id=event.organization_id, article_id=event.article_id)
+                await enqueue_index_command(command)
 
     @asynccontextmanager
     async def processor_factory() -> AsyncIterator[OutboxProcessor]:

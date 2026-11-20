@@ -6,9 +6,9 @@ from ddf.application.crud import Crud
 from ddf.application.events import EventDispatcher
 from fastapi import APIRouter, Depends, Query, status
 
+from src.api.dependencies.access import GrantRepositoryDep
 from src.api.dependencies.auth import CurrentAdmin
 from src.api.dependencies.db import UnitOfWorkDep
-from src.api.dependencies.repositories import GrantRepositoryDep
 from src.application.access import usecases
 from src.application.access.crud import (
     delete_access_grant_handler,

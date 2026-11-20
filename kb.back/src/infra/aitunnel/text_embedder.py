@@ -43,3 +43,6 @@ class AiTunnelTextEmbedder:
     async def embed_query(self, text: str) -> tuple[float, ...]:
         [vector] = await self.embed_documents([text])
         return vector
+
+    async def close(self) -> None:
+        await self._client.close()

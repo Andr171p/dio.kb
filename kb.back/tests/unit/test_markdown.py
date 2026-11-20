@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from src.application.search.markdown import split_markdown
+from src.application.indexing.markdown import split_markdown
 
 MEDIA_ID = UUID("0198f2a0-0000-7000-8000-000000000001")
 MAX_CHARS = 600
@@ -36,8 +36,8 @@ def test_oversized_table_is_split_with_repeated_header() -> None:
     rows = "\n".join(f"| p{i} | {'значение ' * 10} |" for i in range(30))
     content = f"# Таблица\n\n| Параметр | Значение |\n|---|---|\n{rows}\n"
 
-    chunks = split_markdown(content, max_chars=MAX_CHARS)
+    chunks = split_markdown(content, target_chars=MAX_CHARS)
 
     assert len(chunks) > 1
-    assert all(chunk.text.startswith("| Параметр | Значение |\n|---|---|") for chunk in chunks)
-    assert all(len(chunk.text) <= MAX_CHARS for chunk in chunks)
+    assert all(chunk.markdown.startswith("| Параметр | Значение |\n|---|---|") for chunk in chunks)
+    assert all(len(chunk.markdown) <= MAX_CHARS for chunk in chunks)

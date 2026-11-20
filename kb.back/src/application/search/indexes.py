@@ -43,7 +43,7 @@ class SearchIndexReader(Protocol):
         query: str,
         query_embedding: Sequence[float],
         scope: SearchScope,
-        space_ids: Sequence[UUID],
+        space_ids: Sequence[UUID] | None,
         options: SearchOptions,
     ) -> Sequence[ArticleMatch]:
         """Гибридный поиск строго внутри ``scope``, сгруппированный по статьям."""

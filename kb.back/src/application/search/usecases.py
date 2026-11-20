@@ -138,7 +138,11 @@ async def search_articles(
         if (article := readable.get(candidate.article_id)) is None:
             continue
 
-        hits = [hit for hit in candidate.hits if hit.revision_id == article.published_revision_id]
+        hits = [
+            hit
+            for hit in candidate.hits
+            if hit.article_id == article.id and hit.revision_id == article.published_revision_id
+        ]
         if not hits:
             continue
 

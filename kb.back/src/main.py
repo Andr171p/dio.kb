@@ -7,9 +7,9 @@ from fastapi import FastAPI
 
 load_dotenv()
 
-from src.api.errors import register_exception_handlers  # noqa: E402
-from src.api.lifespan import lifespan  # noqa: E402
-from src.api.routers import router  # noqa: E402
+from src.api.exception_handlers import register_exception_handlers
+from src.api.lifespan import lifespan
+from src.api.routers import router
 
 logging.basicConfig(level=logging.INFO)
 

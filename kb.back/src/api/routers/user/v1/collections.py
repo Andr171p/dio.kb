@@ -2,14 +2,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
+from src.api.dependencies.access import GrantRepositoryDep
+from src.api.dependencies.articles import ArticleRepositoryDep
 from src.api.dependencies.auth import CurrentUser
+from src.api.dependencies.collections import CollectionRepositoryDep, PlacementRepositoryDep
 from src.api.dependencies.db import DBSession
-from src.api.dependencies.repositories import (
-    ArticleRepositoryDep,
-    CollectionRepositoryDep,
-    GrantRepositoryDep,
-    PlacementRepositoryDep,
-)
 from src.application.collections import usecases
 from src.application.collections.dtos import (
     CollectionPlacementResponse,

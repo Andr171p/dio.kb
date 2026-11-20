@@ -39,3 +39,11 @@ uv run pytest
    `{"resource": {"type": "space", "id": "..."}, "subject": {"type": "role", "id": "support_agent"}, "permissions": ["READ", "WRITE", "PUBLISH"]}`.
 4. Пользователь создаёт статью `POST /api/user/v1/spaces/{spaceId}/articles` и публикует `POST /api/user/v1/articles/{id}/publish {"revisionId": ...}`.
 5. Через пару секунд статья ищется: `POST /api/user/v1/search {"query": "..."}`.
+
+## Индексация и service API
+
+Worker получает команды через outbox и Taskiq; состояние публикации повторно проверяется перед записью в Qdrant. PostgreSQL хранит checkpoints по поколениям индекса и кеши результатов анализа изображений и embeddings. Для повторной индексации доступны `POST /api/admin/v1/search/articles/{article_id}/sync` и `POST /api/admin/v1/search/reconcile?rebuild=true`.
+
+Service API предоставляет поиск, превью ссылок и чтение опубликованных статей, пространств и коллекций под `/api/service/v1`. Пока Legacy IAM не поддерживает делегированную identity сервиса, эти маршруты требуют проверенную учётную запись администратора и применяют её обычные ACL; доступ от имени произвольного пользователя не поддерживается.
+
+Интеграционные тесты PostgreSQL и Qdrant запускаются при заданных `TEST_DATABASE_URL` (asyncpg URL базы с применёнными миграциями) и `TEST_QDRANT_URL` соответственно. Используйте отдельные тестовые инстансы.

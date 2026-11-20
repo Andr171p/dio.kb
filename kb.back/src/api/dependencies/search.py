@@ -1,23 +1,22 @@
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends
 
-from src.application.search.protocols import IndexingQueue, TextEmbedder
-from src.application.search.repositories import SearchIndex
+from src.api.dependencies.db import DBSession
+from src.application.search.indexes import SuggestionIndex
+from src.infra.aitunnel import AiTunnelConfig, AiTunnelTextEmbedder
+from src.infra.database.repositories.suggestions import SqlAlchemySuggestionIndex
+from src.infra.qdrant import QdrantConfig, QdrantSearchIndex
 
+aitunnel_config = AiTunnelConfig()  # type: ignore[call-arg]
+text_embedder = aitunnel_text_embedder = AiTunnelTextEmbedder(aitunnel_config)
 
-def get_chunk_repository(request: Request) -> SearchIndex:
-    return request.app.state.chunk_repository
-
-
-def get_embedder(request: Request) -> TextEmbedder:
-    return request.app.state.embedder
-
-
-def get_indexing_queue(request: Request) -> IndexingQueue:
-    return request.app.state.indexing_queue
+qdrant_config = QdrantConfig()
+search_index = qdrant_search_index = QdrantSearchIndex(qdrant_config)
 
 
-ChunkRepositoryDep = Annotated[SearchIndex, Depends(get_chunk_repository)]
-EmbedderDep = Annotated[TextEmbedder, Depends(get_embedder)]
-IndexingQueueDep = Annotated[IndexingQueue, Depends(get_indexing_queue)]
+def get_suggestion_index(session: DBSession) -> SuggestionIndex:
+    return SqlAlchemySuggestionIndex(session)
+
+
+SuggestionIndexDep = Annotated[SuggestionIndex, Depends(get_suggestion_index)]

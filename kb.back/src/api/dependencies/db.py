@@ -29,6 +29,7 @@ async def get_db() -> AsyncIterator[AsyncSession]:
 
 
 DBSession = Annotated[AsyncSession, Depends(get_db)]
+UnitOfWorkDep = DBSession
 
 
 def get_outbox(session: DBSession) -> OutboxStore:
@@ -37,4 +38,4 @@ def get_outbox(session: DBSession) -> OutboxStore:
 
 OutboxDep = Annotated[OutboxStore, Depends(get_outbox)]
 
-__all__ = ["DBSession", "OutboxDep"]
+__all__ = ["DBSession", "OutboxDep", "engine"]

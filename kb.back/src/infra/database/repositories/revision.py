@@ -3,9 +3,6 @@ from uuid import UUID
 from ddf.infra.database.sqlalchemy import SqlAlchemyRepository
 from sqlalchemy import select
 
-from src.application.articles.repositories import (
-    ArticleRevisionRepository,
-)
 from src.domain.articles.models import ArticleRevision
 
 from ..models import ArticleRevisionOrm

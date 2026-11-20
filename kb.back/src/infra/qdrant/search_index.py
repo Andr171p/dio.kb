@@ -16,9 +16,38 @@ DENSE_VECTOR = "dense"
 BM25_VECTOR = "bm25"
 BM25_MODEL = "qdrant/bm25"
 
-_UPSERT_BATCH_SIZE = 64
 _PREFETCH_FACTOR = 5
 _HIT_PAYLOAD = ["article_id", "revision_id", "text", "heading_path", "anchor"]
+
+
+def _scope_filter(scope: SearchScope, space_ids: Sequence[UUID] | None) -> models.Filter:
+    must: list[models.Condition] = [
+        models.FieldCondition(
+            key="organization_id",
+            match=models.MatchValue(value=str(scope.organization_id)),
+        )
+    ]
+
+    if space_ids is not None:
+        must.append(
+            models.FieldCondition(
+                key="space_id",
+                match=models.MatchAny(any=[str(space_id) for space_id in space_ids]),
+            )
+        )
+
+    should: list[models.Condition] = [
+        models.FieldCondition(
+            key=kind + "_id",
+            match=models.MatchAny(any=[str(r.id) for r in scope.resources if r.type == kind]),
+        )
+        for kind in ("space", "article")
+        if any(r.type == kind for r in scope.resources)
+    ]
+
+    must.append(models.Filter(should=should))
+    return models.Filter(must=must)
+
 
 def _article_filter(organization_id: UUID, article_id: UUID) -> models.Filter:
     return models.Filter(
@@ -35,7 +64,10 @@ class QdrantSearchIndex:
     Поиск — гибридный (RRF двух prefetch), всегда с фильтром области доступа.
     """
 
-    def __init__(self, config: QdrantConfig) -> None:
+    def __init__(self, config: QdrantConfig, *, write_batch_size: int = 100) -> None:
+        if write_batch_size < 1:
+            raise ValueError("write_batch_size must be positive")
+        self._write_batch_size = write_batch_size
         self._client = AsyncQdrantClient(
             url=str(config.url),
             api_key=config.api_key.get_secret_value() if config.api_key else None,
@@ -50,30 +82,31 @@ class QdrantSearchIndex:
         return self._collection
 
     def _bm25_document(self, text: str) -> models.Document:
-        # tokenizer по умолчанию ("word"): с "multilingual" русский стемминг не применяется
+        """tokenizer по умолчанию ("word"): с "multilingual" русский стемминг не применяется"""
         return models.Document(text=text, model=BM25_MODEL, options={"language": self._config.bm25_language})
 
     async def ensure_collection(self, dense_size: int) -> None:
         """Создаёт коллекцию текущего поколения и payload-индексы, если их ещё нет."""
 
-        if await self._client.collection_exists(self._collection):
-            return
+        if not await self._client.collection_exists(self._collection):
+            try:
+                await self._client.create_collection(
+                    self._collection,
+                    vectors_config={
+                        DENSE_VECTOR: models.VectorParams(size=dense_size, distance=models.Distance.COSINE)
+                    },
+                    sparse_vectors_config={BM25_VECTOR: models.SparseVectorParams(modifier=models.Modifier.IDF)},
+                )
+            except UnexpectedResponse as exc:
+                if exc.status_code != HTTPStatus.CONFLICT:
+                    raise
 
-        try:
-            await self._client.create_collection(
-                self._collection,
-                vectors_config={DENSE_VECTOR: models.VectorParams(size=dense_size, distance=models.Distance.COSINE)},
-                sparse_vectors_config={BM25_VECTOR: models.SparseVectorParams(modifier=models.Modifier.IDF)},
-            )
-        except UnexpectedResponse as exc:
-            # Коллекцию параллельно создал другой процесс (API или worker); индексы ниже идемпотентны
-            if exc.status_code != HTTPStatus.CONFLICT:
-                raise
         await self._client.create_payload_index(
             self._collection,
             "organization_id",
             models.KeywordIndexParams(type=models.KeywordIndexType.KEYWORD, is_tenant=True),
         )
+
         for field in ("space_id", "article_id", "revision_id"):
             await self._client.create_payload_index(self._collection, field, models.PayloadSchemaType.KEYWORD)
 
@@ -98,15 +131,6 @@ class QdrantSearchIndex:
             },
         )
 
-    @staticmethod
-    def _article_filter(organization_id: UUID, article_id: UUID) -> models.Filter:
-        return models.Filter(
-            must=[
-                models.FieldCondition(key="organization_id", match=models.MatchValue(value=str(organization_id))),
-                models.FieldCondition(key="article_id", match=models.MatchValue(value=str(article_id))),
-            ]
-        )
-
     async def sync_revision(
         self,
         *,
@@ -124,45 +148,27 @@ class QdrantSearchIndex:
         ):
             raise ValueError("Invalid chunks for article revision")
 
-        for start in range(0, len(chunks), _UPSERT_BATCH_SIZE):
+        for start in range(0, len(chunks), self._write_batch_size):
             await self._client.upsert(
                 self._collection,
-                points=[self._to_point(c) for c in chunks[start : start + _UPSERT_BATCH_SIZE]],
+                points=[self._to_point(c) for c in chunks[start : start + self._write_batch_size]],
                 wait=True,
             )
-        stale = self._article_filter(organization_id, article_id)
-        ids = [str(c.id) for c in chunks]
+
+        stale = _article_filter(organization_id, article_id)
+        ids: list[models.ExtendedPointId] = [str(c.id) for c in chunks]
+
         if ids:
             stale.must_not = [models.HasIdCondition(has_id=ids)]
+
         await self._client.delete(self._collection, points_selector=models.FilterSelector(filter=stale), wait=True)
 
     async def delete_article(self, *, organization_id: UUID, article_id: UUID) -> None:
         await self._client.delete(
             self._collection,
-            points_selector=models.FilterSelector(filter=self._article_filter(organization_id, article_id)),
+            points_selector=models.FilterSelector(filter=_article_filter(organization_id, article_id)),
             wait=True,
         )
-
-    async def close(self) -> None:
-        await self._client.close()
-
-    @staticmethod
-    def _scope_filter(scope: SearchScope, space_ids: Sequence[UUID] | None) -> models.Filter:
-        must = [models.FieldCondition(key="organization_id", match=models.MatchValue(value=str(scope.organization_id)))]
-        if space_ids is not None:
-            must.append(
-                models.FieldCondition(key="space_id", match=models.MatchAny(any=[str(item) for item in space_ids]))
-            )
-        should = [
-            models.FieldCondition(
-                key=kind + "_id", match=models.MatchAny(any=[str(r.id) for r in scope.resources if r.type == kind])
-            )
-            for kind in ("space", "article")
-            if any(r.type == kind for r in scope.resources)
-        ]
-        # A nested filter ensures that the tenant constraint AND at least one ACL grant apply.
-        must.append(models.Filter(should=should))
-        return models.Filter(must=must)
 
     async def search(
         self,
@@ -175,10 +181,11 @@ class QdrantSearchIndex:
     ) -> list[ArticleMatch]:
         if not any(resource.type in {"space", "article"} for resource in scope.resources):
             return []
+
         if space_ids is not None and not space_ids:
             return []
 
-        scope_filter = self._scope_filter(scope, space_ids)
+        scope_filter = _scope_filter(scope, space_ids)
         prefetch_limit = options.candidates_limit * options.max_hits_per_article * _PREFETCH_FACTOR
 
         response = await self._client.query_points_groups(
@@ -224,3 +231,6 @@ class QdrantSearchIndex:
                 results.append(ArticleMatch(article_id=hits[0].article_id, score=hits[0].score, hits=hits))
 
         return results
+
+    async def close(self) -> None:
+        await self._client.close()

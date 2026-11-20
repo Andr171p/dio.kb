@@ -1,9 +1,9 @@
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterator
 from uuid import UUID
 
 import aiohttp
 
-from src.application.search.models import MediaObject
+from src.application.indexing.models import MediaObject
 from src.infra.services.base import SrvBaseClient
 
 from .dtos import AttachmentDTO, DownloadMediaDTO
@@ -12,7 +12,7 @@ _S3_CONNECT_TIMEOUT = 60
 _MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024
 
 
-async def download_stream(url: str, chunk_size: int = 1024 * 64) -> AsyncIterable[bytes]:
+async def download_stream(url: str, chunk_size: int = 1024 * 64) -> AsyncIterator[bytes]:
     """Потоково скачивает файл из S3 по предподписанному URL."""
 
     timeout = aiohttp.ClientTimeout(connect=_S3_CONNECT_TIMEOUT)
@@ -52,9 +52,7 @@ class SrvMediaClient(SrvBaseClient):
 
         attachment = await self.get_attachment(media_id)
         if attachment.size_bytes > _MAX_DOWNLOAD_BYTES:
-            raise ValueError(
-                f"Attachment {media_id} is too large for indexing: {attachment.size_bytes} bytes."
-            )
+            raise ValueError(f"Attachment {media_id} is too large for indexing: {attachment.size_bytes} bytes.")
 
         download = await self.create_download_url(media_id)
         content = bytearray()

@@ -2,15 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
+from src.api.dependencies.access import GrantRepositoryDep
+from src.api.dependencies.articles import ArticleRepositoryDep
 from src.api.dependencies.auth import CurrentUser
+from src.api.dependencies.collections import CollectionRepositoryDep, PlacementRepositoryDep
 from src.api.dependencies.db import DBSession
-from src.api.dependencies.repositories import (
-    ArticleRepositoryDep,
-    CollectionRepositoryDep,
-    GrantRepositoryDep,
-    PlacementRepositoryDep,
-)
-from src.application.collections import usecases
+from src.application.collections import usecases as placements
 from src.application.collections.dtos import CollectionPlacementResponse, MovePlacementDTO
 
 router = APIRouter(prefix="/collection-placements", tags=["Collection Placements"])
@@ -27,7 +24,7 @@ async def move_collection_placement(
     grant_repository: GrantRepositoryDep,
     uow: DBSession,
 ) -> CollectionPlacementResponse:
-    return await usecases.move_collection_placement(
+    return await placements.move_collection_placement(
         placement_id,
         dto,
         auth,
@@ -52,7 +49,7 @@ async def delete_collection_placement(
     grant_repository: GrantRepositoryDep,
     uow: DBSession,
 ) -> None:
-    await usecases.delete_collection_placement(
+    await placements.delete_collection_placement(
         placement_id,
         auth,
         collection_repository=collection_repository,

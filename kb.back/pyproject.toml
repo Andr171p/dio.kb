@@ -9,6 +9,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "markdown-it-py>=3.0",
     "openai>=2.0",
+    "pillow>=13.0.0",
     "py-ddd-framework[sqlalchemy]",
     "pydantic-settings>=2.15",
     "python-dotenv>=1.2.4",

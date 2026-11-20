@@ -56,6 +56,9 @@ class AiTunnelImageAnalyzer:
 
         return _parse_response(raw_content)
 
+    async def close(self) -> None:
+        await self._client.close()
+
 
 def _parse_response(raw_content: str) -> ImageAnalysis:
     try:

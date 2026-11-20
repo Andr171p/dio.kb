@@ -1,26 +1,16 @@
 import logging
 from collections.abc import Sequence
-from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID
 
-from src.domain.articles.models import ArticleRevision, PublishedArticle
+from src.domain.articles.models import PublishedArticle
 
 from .checkpoint import IndexCheckpoint, IndexCheckpointStore
-from .markdown import MarkdownChunk, split_markdown
 from .models import IndexedChunk
 from .search_index_writer import SearchIndexWriter
 from .types import IndexOutcome, LoadPublication, LockArticleIndex, PrepareArticleChunks
 
 logger = logging.getLogger(__name__)
-
-
-class IncompleteImageAnalysisError(RuntimeError):
-    """Не все изображения удалось обработать."""
-
-    def __init__(self, media_ids: tuple[UUID, ...]) -> None:
-        self.media_ids = media_ids
-        super().__init__(f"Failed to analyze {len(media_ids)} media objects.")
 
 
 def _publication_key(published: PublishedArticle | None) -> tuple[UUID, UUID, UUID, UUID] | None:
@@ -46,24 +36,6 @@ def _is_indexed(checkpoint: IndexCheckpoint | None, published: PublishedArticle,
         and checkpoint.space_id == article.space_id
         and checkpoint.generation == generation
     )
-
-
-def _split_revision(revision: ArticleRevision, *, target_chars: int) -> list[MarkdownChunk]:
-    """Разбивает summary и основной Markdown один раз."""
-
-    sections: list[MarkdownChunk] = []
-
-    if revision.summary:
-        sections.extend(
-            replace(section, anchor=None) for section in split_markdown(revision.summary, target_chars=target_chars)
-        )
-
-    sections.extend(split_markdown(revision.content, target_chars=target_chars))
-
-    if not sections:
-        sections.append(MarkdownChunk(heading_path=(), anchor=None, markdown=revision.title))
-
-    return sections
 
 
 async def index_article(
