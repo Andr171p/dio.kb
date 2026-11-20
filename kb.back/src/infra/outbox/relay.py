@@ -12,25 +12,30 @@ from contextlib import asynccontextmanager
 from ddf.application.outbox import OutboxConfig, OutboxProcessor
 from ddf.domain.events import Event
 from ddf.infra.database.sqlalchemy import PostgresConfig
-from ddf.infra.outbox.sqlalchemy import (
-    PostgresOutboxListener,
-    SqlAlchemyOutboxStore,
-    run_postgres_notify_worker,
-)
+from ddf.infra.outbox.sqlalchemy import PostgresOutboxListener, SqlAlchemyOutboxStore, run_postgres_notify_worker
 from ddf.infra.outbox.worker import OutboxWorkerConfig
 from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from src.domain.articles.events import ArticleArchived, ArticlePublished, ArticleUnpublished
 from src.infra.broker.tasks import TaskiqIndexingQueue, broker
-from src.infra.database.session import create_engine, create_session_factory
 from src.infra.outbox import OUTBOX_CHANNEL
 
 logger = logging.getLogger(__name__)
 
 
 async def run_outbox_relay() -> None:
-    engine = create_engine(PostgresConfig())
-    session_factory = create_session_factory(engine)
+    config = PostgresConfig()
+
+    engine = create_async_engine(
+        config.uri,
+        pool_size=config.pool_resize,
+        max_overflow=config.max_overflow,
+        pool_timeout=config.pool_timeout,
+        pool_pre_ping=True,
+        echo=config.echo,
+    )
+    sessionmaker = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
     indexing_queue = TaskiqIndexingQueue()
 
     async def publish(events: Sequence[Event]) -> None:
@@ -40,7 +45,7 @@ async def run_outbox_relay() -> None:
 
     @asynccontextmanager
     async def processor_factory() -> AsyncIterator[OutboxProcessor]:
-        async with session_factory() as session:
+        async with sessionmaker() as session:
             yield OutboxProcessor(
                 uow=session,
                 outbox_store=SqlAlchemyOutboxStore(session),

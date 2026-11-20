@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from taskiq import TaskiqDepends, TaskiqEvents, TaskiqState
 
 from src.application.search.indexing import sync_article_index
-from src.infra.ai import AiTunnelConfig, OpenAIImageTextExtractor, OpenAITextEmbedder, create_openai_client
+from src.infra.aitunnel import AiTunnelConfig, AiTunnelImageAnalyzer, AiTunnelTextEmbedder
 from src.infra.database.repositories import (
     SqlAlchemyArticleIndexStateRepository,
     SqlAlchemyArticleRepository,
@@ -40,7 +40,7 @@ class WorkerResources:
     chunk_repository: QdrantSearchChunkRepository
     openai_client: AsyncOpenAI
     embedder: OpenAITextEmbedder
-    image_extractor: OpenAIImageTextExtractor
+    image_extractor: AiTunnelImageAnalyzer
     media_client: SrvMediaClient
 
 
@@ -69,7 +69,7 @@ async def startup(state: TaskiqState) -> None:
         chunk_repository=chunk_repository,
         openai_client=openai_client,
         embedder=embedder,
-        image_extractor=OpenAIImageTextExtractor(openai_client, model=ai_config.vision_model),
+        image_extractor=AiTunnelImageAnalyzer(openai_client, model=ai_config.vision_model),
         media_client=SrvMediaClient(SrvMediaConfig()),  # type: ignore[call-arg]
     )
 

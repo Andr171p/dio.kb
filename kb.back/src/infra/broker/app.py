@@ -8,7 +8,9 @@ from .config import RabbitConfig
 
 load_dotenv()
 
-broker = AioPikaBroker(RabbitConfig().url).with_middlewares(
+rabbit_config = RabbitConfig()
+
+broker = AioPikaBroker(rabbit_config.url).with_middlewares(
     SmartRetryMiddleware(
         default_retry_count=5,
         default_delay=5,

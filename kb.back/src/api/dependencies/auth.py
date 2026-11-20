@@ -1,9 +1,10 @@
 from typing import Annotated
 
 import hashlib
+from collections.abc import Callable
 
 from ddf.infra.cache import InMemoryCache
-from fastapi import Depends, Request
+from fastapi import Depends, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.application.auth.dtos import Auth, AuthType, AuthUser
@@ -76,4 +77,27 @@ def get_current_service(auth: CurrentAuth) -> Auth:
 
 CurrentService = Annotated[Auth, Depends(get_current_service)]
 
-__all__ = ["CurrentAdmin", "CurrentAuth", "CurrentService", "CurrentUser", "authenticate"]
+
+def require_auth_type(*required_types: AuthType) -> Callable[[Auth], Auth]:
+    def dependency(auth: Annotated[Auth, Depends(get_current_auth)]) -> Auth:
+        if auth.type not in required_types:
+            raise PermissionDeniedError(f"Access denied for auth type: {auth.type.name!r}.")
+
+        return auth
+    return dependency
+
+
+require_auth_user = Security(require_auth_type(AuthType.USER))
+
+# Legacy: сервисных аккаунтов пока нет, service-to-service ходим под админом
+require_auth_service = Security(require_auth_type(AuthType.CLIENT, AuthType.ADMIN))
+
+__all__ = [
+    "CurrentAdmin",
+    "CurrentAuth",
+    "CurrentService",
+    "CurrentUser",
+    "authenticate",
+    "require_auth_service",
+    "require_auth_user",
+]

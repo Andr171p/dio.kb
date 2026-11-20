@@ -8,9 +8,7 @@ from src.application.articles.repositories import (
     ArticleRepository,
     ArticleRevisionRepository,
 )
-from src.application.search.repositories import ArticleIndexStateRepository
 from src.infra.database.repositories import (
-    SqlAlchemyArticleIndexStateRepository,
     SqlAlchemyArticleQueryRepository,
     SqlAlchemyArticleRepository,
     SqlAlchemyArticleRevisionRepository,
@@ -29,11 +27,8 @@ def get_article_query_repository(session: DBSession) -> ArticleQueryRepository:
     return SqlAlchemyArticleQueryRepository(session)
 
 
-def get_index_state_repository(session: DBSession) -> ArticleIndexStateRepository:
-    return SqlAlchemyArticleIndexStateRepository(session)
-
-
 ArticleRepositoryDep = Annotated[ArticleRepository, Depends(get_article_repository)]
 RevisionRepositoryDep = Annotated[ArticleRevisionRepository, Depends(get_revision_repository)]
 ArticleQueryRepositoryDep = Annotated[ArticleQueryRepository, Depends(get_article_query_repository)]
-IndexStateRepositoryDep = Annotated[ArticleIndexStateRepository, Depends(get_index_state_repository)]
+
+__all__ = ["ArticleQueryRepositoryDep", "ArticleRepositoryDep", "RevisionRepositoryDep"]

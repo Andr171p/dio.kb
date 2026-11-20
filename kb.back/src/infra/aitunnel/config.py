@@ -3,8 +3,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AiTunnelConfig(BaseSettings):
-    """OpenAI-совместимый провайдер AI Tunnel."""
-
     model_config = SettingsConfigDict(env_prefix="AITUNNEL_")
 
     api_key: SecretStr = Field(description="API ключ AI Tunnel")
@@ -17,5 +15,6 @@ class AiTunnelConfig(BaseSettings):
     embedding_batch_size: PositiveInt = Field(default=64, description="Текстов в одном запросе эмбеддингов")
 
     vision_model: str = Field(
-        default="gpt-4.1-nano", description="Vision-модель для OCR и описания изображений"
+        default="gpt-4.1-nano",
+        description="Vision-модель для OCR и описания изображений",
     )

@@ -6,7 +6,7 @@ from ddf.infra.database.sqlalchemy import PostgresConfig
 from fastapi import FastAPI
 
 from src.application.auth import Auth
-from src.infra.ai import AiTunnelConfig, OpenAITextEmbedder, create_openai_client
+from src.infra.aitunnel import AiTunnelConfig, OpenAITextEmbedder, create_openai_client
 from src.infra.broker.tasks import TaskiqIndexingQueue, broker
 from src.infra.database.session import create_engine, create_session_factory
 from src.infra.links import HttpLinkPreviewFetcher
