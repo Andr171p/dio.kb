@@ -5,7 +5,10 @@ from uuid import UUID
 from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
-from src.application.search.models import ArticleSearchResult, ChunkHit, IndexedChunk, SearchScope
+from src.application.indexing.models import IndexedChunk
+from src.application.search.access import SearchScope
+from src.application.search.indexes import SearchOptions
+from src.application.search.models import ArticleMatch, ChunkHit
 
 from .config import QdrantConfig
 
@@ -17,21 +20,33 @@ _UPSERT_BATCH_SIZE = 64
 _PREFETCH_FACTOR = 5
 _HIT_PAYLOAD = ["article_id", "revision_id", "text", "heading_path", "anchor"]
 
+def _article_filter(organization_id: UUID, article_id: UUID) -> models.Filter:
+    return models.Filter(
+        must=[
+            models.FieldCondition(key="organization_id", match=models.MatchValue(value=str(organization_id))),
+            models.FieldCondition(key="article_id", match=models.MatchValue(value=str(article_id))),
+        ]
+    )
 
-class QdrantSearchChunkRepository:
+
+class QdrantSearchIndex:
     """
-    Фрагменты в Qdrant: dense-вектор (эмбеддинг) + sparse BM25, вычисляемый на сервере Qdrant.
-
+    Фрагменты в Qdrant: dense-вектор (embedding) + sparse BM25, вычисляемый на сервере Qdrant.
     Поиск — гибридный (RRF двух prefetch), всегда с фильтром области доступа.
     """
 
-    def __init__(self, client: AsyncQdrantClient, config: QdrantConfig) -> None:
-        self._client = client
+    def __init__(self, config: QdrantConfig) -> None:
+        self._client = AsyncQdrantClient(
+            url=str(config.url),
+            api_key=config.api_key.get_secret_value() if config.api_key else None,
+            timeout=config.timeout,
+            cloud_inference=True,
+        )
         self._config = config
         self._collection = config.collection_name
 
     @property
-    def index_name(self) -> str:
+    def generation(self) -> str:
         return self._collection
 
     def _bm25_document(self, text: str) -> models.Document:
@@ -47,9 +62,7 @@ class QdrantSearchChunkRepository:
         try:
             await self._client.create_collection(
                 self._collection,
-                vectors_config={
-                    DENSE_VECTOR: models.VectorParams(size=dense_size, distance=models.Distance.COSINE)
-                },
+                vectors_config={DENSE_VECTOR: models.VectorParams(size=dense_size, distance=models.Distance.COSINE)},
                 sparse_vectors_config={BM25_VECTOR: models.SparseVectorParams(modifier=models.Modifier.IDF)},
             )
         except UnexpectedResponse as exc:
@@ -68,7 +81,7 @@ class QdrantSearchChunkRepository:
         return models.PointStruct(
             id=str(chunk.id),
             vector={
-                DENSE_VECTOR: list(chunk.dense_vector),
+                DENSE_VECTOR: list(chunk.embedding or ()),
                 BM25_VECTOR: self._bm25_document(chunk.search_text),
             },
             payload={
@@ -79,111 +92,101 @@ class QdrantSearchChunkRepository:
                 "position": chunk.position,
                 "heading_path": list(chunk.heading_path),
                 "anchor": chunk.anchor,
-                "text": chunk.text,
+                "text": chunk.markdown,
                 "content_hash": chunk.content_hash,
                 "media_ids": [str(media_id) for media_id in chunk.media_ids],
             },
         )
 
     @staticmethod
-    def _article_filter(article_id: UUID) -> models.Filter:
+    def _article_filter(organization_id: UUID, article_id: UUID) -> models.Filter:
         return models.Filter(
-            must=[models.FieldCondition(key="article_id", match=models.MatchValue(value=str(article_id)))],
+            must=[
+                models.FieldCondition(key="organization_id", match=models.MatchValue(value=str(organization_id))),
+                models.FieldCondition(key="article_id", match=models.MatchValue(value=str(article_id))),
+            ]
         )
 
-    async def replace_article_chunks(
+    async def sync_revision(
         self,
+        *,
+        organization_id: UUID,
         article_id: UUID,
         revision_id: UUID,
         chunks: Sequence[IndexedChunk],
     ) -> None:
+        if any(
+            c.organization_id != organization_id
+            or c.article_id != article_id
+            or c.revision_id != revision_id
+            or not c.embedding
+            for c in chunks
+        ):
+            raise ValueError("Invalid chunks for article revision")
+
         for start in range(0, len(chunks), _UPSERT_BATCH_SIZE):
             await self._client.upsert(
                 self._collection,
-                points=[self._to_point(chunk) for chunk in chunks[start : start + _UPSERT_BATCH_SIZE]],
+                points=[self._to_point(c) for c in chunks[start : start + _UPSERT_BATCH_SIZE]],
                 wait=True,
             )
+        stale = self._article_filter(organization_id, article_id)
+        ids = [str(c.id) for c in chunks]
+        if ids:
+            stale.must_not = [models.HasIdCondition(has_id=ids)]
+        await self._client.delete(self._collection, points_selector=models.FilterSelector(filter=stale), wait=True)
 
-        stale = self._article_filter(article_id)
-        stale.must_not = [
-            models.FieldCondition(key="revision_id", match=models.MatchValue(value=str(revision_id)))
-        ]
-        await self._client.delete(
-            self._collection, points_selector=models.FilterSelector(filter=stale), wait=True
-        )
-
-    async def delete_article_chunks(self, article_id: UUID) -> None:
+    async def delete_article(self, *, organization_id: UUID, article_id: UUID) -> None:
         await self._client.delete(
             self._collection,
-            points_selector=models.FilterSelector(filter=self._article_filter(article_id)),
+            points_selector=models.FilterSelector(filter=self._article_filter(organization_id, article_id)),
             wait=True,
         )
 
-    async def find_article_vectors(self, article_id: UUID) -> dict[str, tuple[float, ...]]:
-        vectors: dict[str, tuple[float, ...]] = {}
-        offset = None
-
-        while True:
-            points, offset = await self._client.scroll(
-                self._collection,
-                scroll_filter=self._article_filter(article_id),
-                with_payload=["content_hash"],
-                with_vectors=[DENSE_VECTOR],
-                limit=256,
-                offset=offset,
-            )
-            for point in points:
-                vector = (point.vector or {}).get(DENSE_VECTOR) if isinstance(point.vector, dict) else None
-                if point.payload and vector:
-                    vectors[point.payload["content_hash"]] = tuple(vector)
-
-            if offset is None:
-                return vectors
+    async def close(self) -> None:
+        await self._client.close()
 
     @staticmethod
-    def _scope_filter(organization_id: UUID, scope: SearchScope) -> models.Filter:
-        """``organization AND (space IN scope OR article IN scope) [AND space IN restrict]``."""
-
-        must: list[models.Condition] = [
-            models.FieldCondition(key="organization_id", match=models.MatchValue(value=str(organization_id))),
-        ]
-        if scope.restrict_space_ids is not None:
+    def _scope_filter(scope: SearchScope, space_ids: Sequence[UUID] | None) -> models.Filter:
+        must = [models.FieldCondition(key="organization_id", match=models.MatchValue(value=str(scope.organization_id)))]
+        if space_ids is not None:
             must.append(
-                models.FieldCondition(
-                    key="space_id",
-                    match=models.MatchAny(any=[str(item) for item in scope.restrict_space_ids]),
-                )
+                models.FieldCondition(key="space_id", match=models.MatchAny(any=[str(item) for item in space_ids]))
             )
-
-        should: list[models.Condition] = [
-            models.FieldCondition(key=key, match=models.MatchAny(any=[str(item) for item in ids]))
-            for key, ids in (("space_id", scope.space_ids), ("article_id", scope.article_ids))
-            if ids
+        should = [
+            models.FieldCondition(
+                key=kind + "_id", match=models.MatchAny(any=[str(r.id) for r in scope.resources if r.type == kind])
+            )
+            for kind in ("space", "article")
+            if any(r.type == kind for r in scope.resources)
         ]
-        return models.Filter(must=must, should=should)
+        # A nested filter ensures that the tenant constraint AND at least one ACL grant apply.
+        must.append(models.Filter(should=should))
+        return models.Filter(must=must)
 
     async def search(
         self,
         *,
         query: str,
-        query_vector: Sequence[float],
-        organization_id: UUID,
+        query_embedding: Sequence[float],
         scope: SearchScope,
-        limit: int,
-        hits_per_article: int,
-    ) -> list[ArticleSearchResult]:
-        if scope.is_empty:
+        space_ids: Sequence[UUID] | None,
+        options: SearchOptions,
+    ) -> list[ArticleMatch]:
+        if not any(resource.type in {"space", "article"} for resource in scope.resources):
+            return []
+        if space_ids is not None and not space_ids:
             return []
 
-        scope_filter = self._scope_filter(organization_id, scope)
-        prefetch_limit = limit * hits_per_article * _PREFETCH_FACTOR
+        scope_filter = self._scope_filter(scope, space_ids)
+        prefetch_limit = options.candidates_limit * options.max_hits_per_article * _PREFETCH_FACTOR
 
         response = await self._client.query_points_groups(
             self._collection,
             group_by="article_id",
             prefetch=[
                 models.Prefetch(
-                    query=list(query_vector),
+                    query=list(query_embedding),
                     using=DENSE_VECTOR,
                     filter=scope_filter,
                     limit=prefetch_limit,
@@ -197,12 +200,12 @@ class QdrantSearchChunkRepository:
             ],
             query=models.FusionQuery(fusion=models.Fusion.RRF),
             query_filter=scope_filter,
-            limit=limit,
-            group_size=hits_per_article,
+            limit=options.candidates_limit,
+            group_size=options.max_hits_per_article,
             with_payload=_HIT_PAYLOAD,
         )
 
-        results: list[ArticleSearchResult] = []
+        results: list[ArticleMatch] = []
         for group in response.groups:
             hits = tuple(
                 ChunkHit(
@@ -210,7 +213,7 @@ class QdrantSearchChunkRepository:
                     article_id=UUID(point.payload["article_id"]),
                     revision_id=UUID(point.payload["revision_id"]),
                     score=point.score,
-                    text=point.payload["text"],
+                    markdown=point.payload["text"],
                     heading_path=tuple(point.payload.get("heading_path") or ()),
                     anchor=point.payload.get("anchor"),
                 )
@@ -218,6 +221,6 @@ class QdrantSearchChunkRepository:
                 if point.payload
             )
             if hits:
-                results.append(ArticleSearchResult(article_id=hits[0].article_id, score=hits[0].score, hits=hits))
+                results.append(ArticleMatch(article_id=hits[0].article_id, score=hits[0].score, hits=hits))
 
         return results

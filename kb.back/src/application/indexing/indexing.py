@@ -34,7 +34,7 @@ def _publication_key(published: PublishedArticle | None) -> tuple[UUID, UUID, UU
     return article.organization_id, article.id, article.space_id, revision.id
 
 
-def _is_indexed(checkpoint: IndexCheckpoint, published: PublishedArticle, generation: str) -> bool:
+def _is_indexed(checkpoint: IndexCheckpoint | None, published: PublishedArticle, generation: str) -> bool:
     if checkpoint is None:
         return False
 
@@ -55,8 +55,7 @@ def _split_revision(revision: ArticleRevision, *, target_chars: int) -> list[Mar
 
     if revision.summary:
         sections.extend(
-            replace(section, anchor=None)
-            for section in split_markdown(revision.summary, target_chars=target_chars)
+            replace(section, anchor=None) for section in split_markdown(revision.summary, target_chars=target_chars)
         )
 
     sections.extend(split_markdown(revision.content, target_chars=target_chars))
@@ -97,7 +96,7 @@ async def index_article(
         if _is_indexed(checkpoint, publication, index_writer.generation):
             return IndexOutcome.UNCHANGED
 
-    chunks: Sequence[IndexedChunk] = await prepare_chunks(*publication) if publication is not None else ()
+    chunks: Sequence[IndexedChunk] = await prepare_chunks(publication) if publication is not None else ()
 
     async with lock_article(organization_id, article_id):
         actual = await load_publication(organization_id, article_id)

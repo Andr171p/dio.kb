@@ -31,7 +31,8 @@ _ANCESTORS_QUERY = text("""
 
 
 class CollectionMapper:
-    def to_model(self, entity: Collection) -> CollectionOrm:
+    @staticmethod
+    def to_model(entity: Collection) -> CollectionOrm:
         return CollectionOrm(
             id=entity.id,
             created_at=entity.created_at,
@@ -44,7 +45,8 @@ class CollectionMapper:
             description=entity.description,
         )
 
-    def from_model(self, model: CollectionOrm) -> Collection:
+    @staticmethod
+    def from_model(model: CollectionOrm) -> Collection:
         return Collection(
             id=model.id,
             created_at=model.created_at,
@@ -59,7 +61,8 @@ class CollectionMapper:
 
 
 class CollectionPlacementMapper:
-    def to_model(self, entity: CollectionPlacement) -> CollectionPlacementOrm:
+    @staticmethod
+    def to_model(entity: CollectionPlacement) -> CollectionPlacementOrm:
         return CollectionPlacementOrm(
             id=entity.id,
             created_at=entity.created_at,
@@ -71,7 +74,8 @@ class CollectionPlacementMapper:
             rank=entity.rank,
         )
 
-    def from_model(self, model: CollectionPlacementOrm) -> CollectionPlacement:
+    @staticmethod
+    def from_model(model: CollectionPlacementOrm) -> CollectionPlacement:
         return CollectionPlacement(
             id=model.id,
             created_at=model.created_at,

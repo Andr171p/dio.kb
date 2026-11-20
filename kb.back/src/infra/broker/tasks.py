@@ -24,7 +24,7 @@ from src.infra.database.repositories import (
     SqlAlchemyImageTextRepository,
 )
 from src.infra.database.session import create_engine, create_session_factory
-from src.infra.qdrant import QdrantConfig, QdrantSearchChunkRepository, create_qdrant_client
+from src.infra.qdrant import QdrantConfig, QdrantSearchIndex, create_qdrant_client
 from src.infra.services.media import SrvMediaClient, SrvMediaConfig
 
 from .app import broker
@@ -37,7 +37,7 @@ class WorkerResources:
     engine: AsyncEngine
     session_factory: async_sessionmaker[AsyncSession]
     qdrant_client: AsyncQdrantClient
-    chunk_repository: QdrantSearchChunkRepository
+    chunk_repository: QdrantSearchIndex
     openai_client: AsyncOpenAI
     embedder: OpenAITextEmbedder
     image_extractor: AiTunnelImageAnalyzer
@@ -58,7 +58,7 @@ async def startup(state: TaskiqState) -> None:
     )
 
     qdrant_client = create_qdrant_client(QdrantConfig())
-    chunk_repository = QdrantSearchChunkRepository(qdrant_client, QdrantConfig())
+    chunk_repository = QdrantSearchIndex(qdrant_client, QdrantConfig())
     await chunk_repository.ensure_collection(embedder.dimensions)
 
     engine = create_engine(PostgresConfig())

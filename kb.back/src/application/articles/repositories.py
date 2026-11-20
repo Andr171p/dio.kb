@@ -5,6 +5,7 @@ from uuid import UUID
 
 from ddf.application.repositories import Repository
 
+from src.domain.access.vo import Subject
 from src.domain.articles.models import Article, ArticleRevision
 
 from .dtos import ArticleSummaryResponse
@@ -41,7 +42,7 @@ class ArticleQueryRepository:
         organization_id: UUID,
         article_ids: Collection[UUID],
         *,
-        user_id: UUID | None,
+        subjects: Collection[Subject],
         space_ids: Collection[UUID] | None = None,
     ) -> Sequence[PublishedArticle]:
         """

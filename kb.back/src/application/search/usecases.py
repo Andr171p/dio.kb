@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from src.application.access import AccessGrantRepository
+from src.application.access import AccessGrantRepository, build_subjects_from_auth
 from src.application.articles.repositories import ArticleQueryRepository
 from src.application.auth import AuthUser
 
-from .access import resolve_search_scope
+from .access import PUBLIC_SUBJECT, resolve_search_scope
 from .dtos import (
     SearchArticle,
     SearchFragment,
@@ -58,7 +58,7 @@ async def suggest_articles(
         for article in await article_query_repository.find_readable_published(
             organization_id,
             article_ids,
-            user_id=auth.user.id if auth is not None else None,
+            subjects=({PUBLIC_SUBJECT} | build_subjects_from_auth(auth)) if auth is not None else {PUBLIC_SUBJECT},
             space_ids=dto.space_ids,
         )
     }
@@ -127,7 +127,7 @@ async def search_articles(
         for article in await article_query_repository.find_readable_published(
             organization_id,
             [candidate.article_id for candidate in candidates],
-            user_id=auth.user.id if auth is not None else None,
+            subjects=({PUBLIC_SUBJECT} | build_subjects_from_auth(auth)) if auth is not None else {PUBLIC_SUBJECT},
             space_ids=dto.space_ids,
         )
     }

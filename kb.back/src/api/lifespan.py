@@ -10,7 +10,7 @@ from src.infra.aitunnel import AiTunnelConfig, OpenAITextEmbedder, create_openai
 from src.infra.broker.tasks import TaskiqIndexingQueue, broker
 from src.infra.database.session import create_engine, create_session_factory
 from src.infra.links import HttpLinkPreviewFetcher
-from src.infra.qdrant import QdrantConfig, QdrantSearchChunkRepository, create_qdrant_client
+from src.infra.qdrant import QdrantConfig, QdrantSearchIndex, create_qdrant_client
 from src.infra.services.iam import SrvIamClient, SrvIamConfig
 
 
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     qdrant_config = QdrantConfig()
     qdrant_client = create_qdrant_client(qdrant_config)
-    chunk_repository = QdrantSearchChunkRepository(qdrant_client, qdrant_config)
+    chunk_repository = QdrantSearchIndex(qdrant_client, qdrant_config)
     await chunk_repository.ensure_collection(embedder.dimensions)
 
     await broker.startup()

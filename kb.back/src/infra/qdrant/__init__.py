@@ -1,7 +1,7 @@
 from qdrant_client import AsyncQdrantClient
 
 from .config import QdrantConfig
-from .repository import QdrantSearchChunkRepository
+from .search_index import QdrantSearchIndex
 
 
 def create_qdrant_client(config: QdrantConfig) -> AsyncQdrantClient:
@@ -14,4 +14,4 @@ def create_qdrant_client(config: QdrantConfig) -> AsyncQdrantClient:
     )
 
 
-__all__ = ["QdrantConfig", "QdrantSearchChunkRepository", "create_qdrant_client"]
+__all__ = ["QdrantConfig", "QdrantSearchIndex", "create_qdrant_client"]

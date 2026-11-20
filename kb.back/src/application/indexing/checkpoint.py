@@ -21,7 +21,7 @@ class IndexCheckpointStore(Protocol):
 
     async def get(self, article_id: UUID, generation: str) -> IndexCheckpoint | None: ...
 
-    async def save_if_current(self, organization_id: UUID, checkpoint: IndexCheckpoint) -> None:
+    async def save_if_current(self, organization_id: UUID, checkpoint: IndexCheckpoint) -> bool:
         """
         Сохраняет checkpoint, только если статья всё ещё
         опубликована с указанной редакцией и в указанном пространстве.
