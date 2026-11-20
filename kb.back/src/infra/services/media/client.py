@@ -3,7 +3,7 @@ from uuid import UUID
 
 import aiohttp
 
-from src.application.search.models import MediaFile
+from src.application.search.models import MediaObject
 from src.infra.services.base import SrvBaseClient
 
 from .dtos import AttachmentDTO, DownloadMediaDTO
@@ -47,7 +47,7 @@ class SrvMediaClient(SrvBaseClient):
 
         return DownloadMediaDTO.model_validate(data)
 
-    async def download(self, media_id: UUID) -> MediaFile:
+    async def download(self, media_id: UUID) -> MediaObject:
         """Скачивает вложение целиком (реализация порта ``MediaStorage`` для индексации)."""
 
         attachment = await self.get_attachment(media_id)
@@ -61,4 +61,4 @@ class SrvMediaClient(SrvBaseClient):
         async for chunk in download_stream(download.download_url):
             content.extend(chunk)
 
-        return MediaFile(content=bytes(content), content_type=attachment.mime_type)
+        return MediaObject(content=bytes(content), content_type=attachment.mime_type)

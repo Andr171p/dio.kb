@@ -17,6 +17,16 @@ class AccessGrantRepository(Repository[AccessGrant]):
     ) -> Permission:
         """Объединяет (OR) разрешения активных grants субъектов на ресурсы."""
 
+    async def find_accessible_resources(
+        self,
+        organization_id: UUID,
+        subjects: Collection[Subject],
+        permission: Permission,
+        *,
+        resource_types: Collection[str],
+    ) -> frozenset[Resource]:
+        """Ресурсы, доступные для указанной операции."""
+
     async def find_resource_ids(
         self,
         organization_id: UUID,

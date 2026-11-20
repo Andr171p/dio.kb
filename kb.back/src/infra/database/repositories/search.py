@@ -5,7 +5,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.application.search.models import ArticleIndexState, ImageText
+from src.application.search.models import ArticleIndexState, ImageAnalysis
 
 from ..models import ArticleIndexStateOrm, ArticleOrm, ImageTextOrm
 
@@ -14,7 +14,7 @@ class SqlAlchemyImageTextRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def find(self, media_ids: Sequence[UUID], version: str) -> dict[UUID, ImageText]:
+    async def find(self, media_ids: Sequence[UUID], version: str) -> dict[UUID, ImageAnalysis]:
         if not media_ids:
             return {}
 
@@ -22,11 +22,11 @@ class SqlAlchemyImageTextRepository:
             ImageTextOrm.media_id.in_(media_ids), ImageTextOrm.version == version
         )
         return {
-            model.media_id: ImageText(text=model.text, description=model.description)
+            model.media_id: ImageAnalysis(text=model.text, description=model.description)
             for model in await self._session.scalars(stmt)
         }
 
-    async def save(self, media_id: UUID, version: str, image_text: ImageText) -> None:
+    async def save(self, media_id: UUID, version: str, image_text: ImageAnalysis) -> None:
         stmt = insert(ImageTextOrm).values(
             media_id=media_id,
             version=version,
@@ -77,7 +77,7 @@ class SqlAlchemyArticleIndexStateRepository:
                         is_published,
                         or_(
                             ArticleIndexStateOrm.article_id.is_(None),
-                            ArticleIndexStateOrm.index_name != index_name,
+                            ArticleIndexStateOrm.generation != index_name,
                             ArticleIndexStateOrm.revision_id.is_distinct_from(
                                 ArticleOrm.published_revision_id
                             ),

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.articles.dtos import ArticleSummaryResponse
-from src.application.articles.models import PublishedArticle
+from src.application.articles.projections import PublishedArticle
 from src.application.articles.repositories import (
     ArticleQueryRepository,
     ArticleRepository,

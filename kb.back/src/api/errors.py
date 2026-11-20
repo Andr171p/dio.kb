@@ -1,21 +1,16 @@
-from typing import Any
-
 import logging
-from http import HTTPStatus
 
 from ddf.application.exceptions import ApplicationError
 from ddf.domain.exceptions import DomainError
 from ddf.infra.database.sqlalchemy.utils import get_constraint_name, is_unique_violation
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
 
 
-def _error_response(
-    status_code: int, error_code: str, message: str | None, details: Any = None
-) -> JSONResponse:
+def _error_response(status_code: int, error_code: str, message: str | None, details: object = None) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
         content={"errorCode": error_code.lower(), "message": message, "details": details},
@@ -33,14 +28,14 @@ async def _handle_integrity_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, IntegrityError)
     if is_unique_violation(exc):
         return _error_response(
-            HTTPStatus.CONFLICT,
+            status.HTTP_409_CONFLICT,
             "unique_constraint_violation",
             "Resource already exists.",
             get_constraint_name(exc),
         )
 
     logger.warning("Integrity error: %s", exc.orig)
-    return _error_response(HTTPStatus.CONFLICT, "integrity_violation", "Operation violates data integrity.")
+    return _error_response(status.HTTP_409_CONFLICT, "integrity_violation", "Operation violates data integrity.")
 
 
 def register_exception_handlers(app: FastAPI) -> None:

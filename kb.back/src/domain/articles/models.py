@@ -128,3 +128,8 @@ class ArticleRevision(Entity):
 
     author_id: UUID
     change_note: str | None = None
+
+
+type PublishedArticle = tuple[Article, ArticleRevision]
+
+__all__ = ["Article", "ArticleRevision", "PublishedArticle"]

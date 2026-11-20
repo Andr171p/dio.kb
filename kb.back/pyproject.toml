@@ -188,9 +188,6 @@ ignore_names = [
     "head",
 ]
 
-[tool.uv.sources]
-py-ddd-framework = { git = "https://github.com/Andr171p/py-ddd-framework.git", rev = "fix/critical-bugs" }
-
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
@@ -206,3 +203,6 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.uv.sources]
+py-ddd-framework = { git = "https://github.com/Andr171p/py-ddd-framework.git" }

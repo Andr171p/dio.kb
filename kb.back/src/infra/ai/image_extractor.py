@@ -4,7 +4,7 @@ import logging
 
 from openai import AsyncOpenAI
 
-from src.application.search.models import ImageText, MediaFile
+from src.application.search.models import ImageAnalysis, MediaObject
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class OpenAIImageTextExtractor:
     def supports(self, content_type: str) -> bool:
         return content_type.split(";", maxsplit=1)[0].strip().lower() in _SUPPORTED_CONTENT_TYPES
 
-    async def extract(self, image: MediaFile) -> ImageText:
+    async def extract(self, image: MediaObject) -> ImageAnalysis:
         data_url = f"data:{image.content_type};base64,{base64.b64encode(image.content).decode()}"
 
         response = await self._client.chat.completions.create(
@@ -53,9 +53,9 @@ class OpenAIImageTextExtractor:
             payload = json.loads(content)
         except json.JSONDecodeError:
             logger.warning("Vision model returned non-JSON response")
-            return ImageText(text="", description=content.strip())
+            return ImageAnalysis(text="", description=content.strip())
 
-        return ImageText(
+        return ImageAnalysis(
             text=str(payload.get("text") or "").strip(),
             description=str(payload.get("description") or "").strip(),
         )

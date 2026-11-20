@@ -12,9 +12,7 @@ SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
 class CreateArticleDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
-    slug: str = Field(
-        max_length=255, pattern=SLUG_PATTERN, description="Человекочитаемый идентификатор для URL"
-    )
+    slug: str = Field(max_length=255, pattern=SLUG_PATTERN, description="Человекочитаемый идентификатор для URL")
     title: str = Field(min_length=1, max_length=255, description="Заголовок")
     content: str = Field(min_length=1, description="Содержимое статьи в формате Markdown")
     summary: str | None = Field(default=None, min_length=1, description="Краткое содержание")

@@ -5,7 +5,7 @@ from uuid import UUID
 
 @dataclass(frozen=True, slots=True)
 class PublishedArticle:
-    """Актуальное опубликованное состояние статьи по данным PostgreSQL."""
+    """Актуальное опубликованное состояние статьи по данным (модель оптимизированная под чтение)."""
 
     id: UUID
     space_id: UUID

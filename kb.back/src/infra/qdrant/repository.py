@@ -5,7 +5,7 @@ from uuid import UUID
 from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
-from src.application.search.models import ArticleHits, ChunkHit, SearchChunk, SearchScope
+from src.application.search.models import ArticleSearchResult, ChunkHit, IndexedChunk, SearchScope
 
 from .config import QdrantConfig
 
@@ -64,7 +64,7 @@ class QdrantSearchChunkRepository:
         for field in ("space_id", "article_id", "revision_id"):
             await self._client.create_payload_index(self._collection, field, models.PayloadSchemaType.KEYWORD)
 
-    def _to_point(self, chunk: SearchChunk) -> models.PointStruct:
+    def _to_point(self, chunk: IndexedChunk) -> models.PointStruct:
         return models.PointStruct(
             id=str(chunk.id),
             vector={
@@ -95,7 +95,7 @@ class QdrantSearchChunkRepository:
         self,
         article_id: UUID,
         revision_id: UUID,
-        chunks: Sequence[SearchChunk],
+        chunks: Sequence[IndexedChunk],
     ) -> None:
         for start in range(0, len(chunks), _UPSERT_BATCH_SIZE):
             await self._client.upsert(
@@ -171,7 +171,7 @@ class QdrantSearchChunkRepository:
         scope: SearchScope,
         limit: int,
         hits_per_article: int,
-    ) -> list[ArticleHits]:
+    ) -> list[ArticleSearchResult]:
         if scope.is_empty:
             return []
 
@@ -202,7 +202,7 @@ class QdrantSearchChunkRepository:
             with_payload=_HIT_PAYLOAD,
         )
 
-        results: list[ArticleHits] = []
+        results: list[ArticleSearchResult] = []
         for group in response.groups:
             hits = tuple(
                 ChunkHit(
@@ -218,6 +218,6 @@ class QdrantSearchChunkRepository:
                 if point.payload
             )
             if hits:
-                results.append(ArticleHits(article_id=hits[0].article_id, score=hits[0].score, hits=hits))
+                results.append(ArticleSearchResult(article_id=hits[0].article_id, score=hits[0].score, hits=hits))
 
         return results

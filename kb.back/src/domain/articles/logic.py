@@ -79,7 +79,7 @@ def restore_article_revision(
     author_id: UUID,
     change_note: str | None = None,
 ) -> ArticleRevision:
-    """Создаёт новую редакцию с содержимым исторической ``source``."""
+    """Создаёт новую редакцию с содержимым исторической ``published``."""
 
     if article.id != source.article_id:
         raise InvariantViolationError(f"Revision {source.id!r} does not belong to article {article.id!r}.")

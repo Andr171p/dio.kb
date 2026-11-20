@@ -1,12 +1,11 @@
 from uuid import UUID
 
 from ddf.application.exceptions import NotFoundError
-from ddf.application.outbox import OutboxStore
+from ddf.application.outbox import OutboxStore, save_events_to_outbox
 from ddf.application.uow import UnitOfWork
 
 from src.application.access import AccessGrantRepository, Permission, Resource, resolve_permissions
 from src.application.auth import AuthUser
-from src.application.outbox import save_events_to_outbox
 from src.application.spaces.access import get_accessible_space
 from src.application.spaces.repositories import SpaceRepository
 from src.domain.articles import logic
@@ -27,7 +26,7 @@ from .dtos import (
 from .repositories import ArticleQueryRepository, ArticleRepository, ArticleRevisionRepository
 
 
-async def _to_detail(
+async def _to_detail_response(
     article: Article,
     revision: ArticleRevision,
     auth: AuthUser,
@@ -47,9 +46,7 @@ async def _read_revision(
     *,
     revision_repository: ArticleRevisionRepository,
 ) -> ArticleRevision:
-    revision = await revision_repository.read(revision_id)
-
-    if revision is None or revision.article_id != article.id:
+    if (revision := await revision_repository.read(revision_id)) is None or revision.article_id != article.id:
         raise NotFoundError(f"Revision with ID {revision_id} not found.")
 
     return revision
@@ -90,7 +87,7 @@ async def create_article(
     await revision_repository.create(revision)
     await uow.commit()
 
-    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
+    return await _to_detail_response(article, revision, auth, grant_repository=grant_repository)
 
 
 async def list_space_articles(
@@ -149,7 +146,7 @@ async def get_published_article(
         article.published_revision_id,
         revision_repository=revision_repository,
     )
-    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
+    return await _to_detail_response(article, revision, auth, grant_repository=grant_repository)
 
 
 async def get_published_article_by_slug(
@@ -161,9 +158,7 @@ async def get_published_article_by_slug(
     revision_repository: ArticleRevisionRepository,
     grant_repository: AccessGrantRepository,
 ) -> ArticleDetailResponse:
-    article = await article_repository.find_by_slug(space_id, slug)
-
-    if article is None:
+    if (article := await article_repository.find_by_slug(space_id, slug)) is None:
         raise NotFoundError(f"Article {slug!r} not found.")
 
     return await get_published_article(
@@ -192,10 +187,8 @@ async def get_article_draft(
         article_repository=article_repository,
         grant_repository=grant_repository,
     )
-    revision = await _read_revision(
-        article, article.current_revision_id, revision_repository=revision_repository
-    )
-    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
+    revision = await _read_revision(article, article.current_revision_id, revision_repository=revision_repository)
+    return await _to_detail_response(article, revision, auth, grant_repository=grant_repository)
 
 
 async def list_article_revisions(
@@ -272,7 +265,7 @@ async def revise_article(
     await article_repository.update(article)
     await uow.commit()
 
-    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
+    return await _to_detail_response(article, revision, auth, grant_repository=grant_repository)
 
 
 async def restore_article_revision(
@@ -310,7 +303,7 @@ async def restore_article_revision(
     await article_repository.update(article)
     await uow.commit()
 
-    return await _to_detail(article, revision, auth, grant_repository=grant_repository)
+    return await _to_detail_response(article, revision, auth, grant_repository=grant_repository)
 
 
 async def publish_article(

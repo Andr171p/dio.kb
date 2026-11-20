@@ -37,12 +37,14 @@ async def get_accessible_article(
 
 def article_resources(article: Article) -> tuple[Resource, ...]:
     """Цепочка ресурсов, права на которые действуют на статью."""
-
     return Resource(type="space", id=article.space_id), Resource(type="article", id=article.id)
 
 
 async def resolve_article_permissions(
-    article: Article, auth: AuthUser, *, grant_repository: AccessGrantRepository
+    article: Article,
+    auth: AuthUser,
+    *,
+    grant_repository: AccessGrantRepository,
 ) -> Permission:
     return await resolve_permissions(auth, article_resources(article), grant_repository=grant_repository)
 

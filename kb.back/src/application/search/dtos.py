@@ -1,22 +1,41 @@
+from typing import Annotated
+
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, PositiveInt, StringConstraints
 from pydantic.alias_generators import to_camel
 
+SearchText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 
-class SearchDTO(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+SuggestionText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=100)]
 
-    query: str = Field(min_length=1, max_length=500, description="Поисковый запрос на естественном языке")
-    space_ids: list[UUID] | None = Field(
-        default=None, max_length=100, description="Искать только в пространствах"
+
+class _CamelModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        validate_by_name=True,
+        serialize_by_alias=True,
+        extra="forbid",
     )
-    limit: int = Field(default=10, ge=1, le=50, description="Максимальное количество статей")
 
 
-class SearchFragmentResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+class SuggestionRequest(_CamelModel):
+    query: SuggestionText
+    space_ids: list[UUID] | None = Field(default=None, max_length=100)
+    limit: PositiveInt = Field(default=6, le=10)
 
+
+class SearchRequest(_CamelModel):
+    query: SearchText = Field(description="Поисковый запрос")
+    space_ids: list[UUID] | None = Field(
+        default=None,
+        max_length=100,
+        description="Ограничение поиска выбранными пространствами",
+    )
+    limit: PositiveInt = Field(default=10, le=50, description="Максимальное количество статей в ответе")
+
+
+class SearchFragment(_CamelModel):
     chunk_id: UUID = Field(description="Идентификатор фрагмента")
     text: str = Field(description="Фрагмент опубликованной редакции (Markdown)")
     heading_path: list[str] = Field(description="Путь заголовков до фрагмента")
@@ -24,32 +43,31 @@ class SearchFragmentResponse(BaseModel):
     score: float = Field(description="Релевантность фрагмента")
 
 
-class SearchArticleResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-    id: UUID = Field(description="Идентификатор статьи")
-    space_id: UUID = Field(description="Пространство")
-    slug: str = Field(description="Slug статьи")
-    title: str = Field(description="Заголовок опубликованной редакции")
-    revision_id: UUID = Field(description="Опубликованная редакция, к которой относятся фрагменты")
-    published_at: AwareDatetime = Field(description="Дата публикации")
+class SearchArticle(_CamelModel):
+    id: UUID
+    space_id: UUID
+    slug: str
+    title: str
+    revision_id: UUID
+    published_at: AwareDatetime
 
 
-class SearchResultResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-    article: SearchArticleResponse
-    score: float = Field(description="Релевантность статьи")
-    fragments: list[SearchFragmentResponse] = Field(description="Лучшие фрагменты статьи")
+class SearchResult(_CamelModel):
+    article: SearchArticle
+    score: float
+    fragments: list[SearchFragment]
 
 
-class SearchResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
-
-    items: list[SearchResultResponse] = Field(description="Найденные статьи по убыванию релевантности")
+class SearchResponse(_CamelModel):
+    items: list[SearchResult] = Field(description="Найденные статьи по убыванию релевантности")
 
 
-class SyncQueuedResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+class SuggestionResult(_CamelModel):
+    article_id: UUID
+    space_id: UUID
+    slug: str
+    title: str
 
-    queued: int = Field(description="Сколько статей поставлено на синхронизацию индекса")
+
+class SuggestionsResponse(_CamelModel):
+    items: list[SuggestionResult] = Field(description="Найденные подсказки по убыванию релевантности")
