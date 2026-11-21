@@ -1,110 +1,154 @@
-from collections.abc import Collection
 from uuid import UUID
 
-from src.application.access import AccessGrantRepository, Permission, build_subjects_from_auth
+from src.application.access import AccessGrantRepository, build_subjects_from_auth
 from src.application.articles.repositories import ArticleQueryRepository
-from src.application.auth import AuthUser, PermissionDeniedError
+from src.application.auth import AuthUser
 
+from .access import PUBLIC_SUBJECT, resolve_search_scope
 from .dtos import (
-    SearchArticleResponse,
-    SearchDTO,
-    SearchFragmentResponse,
+    SearchArticle,
+    SearchFragment,
+    SearchRequest,
     SearchResponse,
-    SearchResultResponse,
-    SyncQueuedResponse,
+    SearchResult,
+    SuggestionRequest,
+    SuggestionResult,
+    SuggestionsResponse,
 )
-from .models import SearchScope
-from .protocols import IndexingQueue, TextEmbedder
-from .repositories import ArticleIndexStateRepository, SearchChunkRepository
+from .indexes import SearchIndexReader, SearchOptions, SuggestionIndex
+from .types import TextEmbedder
 
-_OVERFETCH_FACTOR = 2
-_HITS_PER_ARTICLE = 3
+_SUGGESTION_OVERFETCH = 4
 
 
-async def resolve_search_scope(
-    auth: AuthUser,
-    space_ids: Collection[UUID] | None = None,
-    *,
-    grant_repository: AccessGrantRepository,
-) -> SearchScope:
-    """READ-область пользователя: пространства с READ и статьи с прямым READ."""
-
-    organization_id = auth.user.organization_id
-    subjects = build_subjects_from_auth(auth)
-
-    readable_space_ids = frozenset(
-        await grant_repository.find_resource_ids(organization_id, subjects, "space", Permission.READ),
-    )
-    readable_article_ids = frozenset(
-        await grant_repository.find_resource_ids(organization_id, subjects, "article", Permission.READ),
-    )
-
-    if space_ids is None:
-        return SearchScope(space_ids=readable_space_ids, article_ids=readable_article_ids)
-
-    restrict_space_ids = frozenset(space_ids)
-    return SearchScope(
-        space_ids=readable_space_ids & restrict_space_ids,
-        article_ids=readable_article_ids,
-        restrict_space_ids=restrict_space_ids,
-    )
-
-
-async def search_articles(
-    dto: SearchDTO,
-    auth: AuthUser,
+async def suggest_articles(
+    organization_id: UUID,
+    auth: AuthUser | None,
+    dto: SuggestionRequest,
     *,
     grant_repository: AccessGrantRepository,
     article_query_repository: ArticleQueryRepository,
-    chunk_repository: SearchChunkRepository,
+    suggestion_index: SuggestionIndex,
+) -> SuggestionsResponse:
+    """Подсказки по опубликованным статьям с актуальной проверкой ``READ``.
+
+    Дешёвый и быстрый, не использует ембединги и не зависит от AI-провайдера.
+    """
+
+    if dto.space_ids is not None and not dto.space_ids:
+        return SuggestionsResponse(items=[])
+
+    scope = await resolve_search_scope(organization_id, auth, grant_repository=grant_repository)
+    if scope.is_empty:
+        return SuggestionsResponse(items=[])
+
+    article_ids = list(
+        dict.fromkeys(
+            await suggestion_index.suggest(
+                dto.query,
+                scope=scope,
+                space_ids=dto.space_ids,
+                limit=dto.limit * _SUGGESTION_OVERFETCH,
+            )
+        )
+    )
+
+    readable = {
+        article.id: article
+        for article in await article_query_repository.find_readable_published(
+            organization_id,
+            article_ids,
+            subjects=({PUBLIC_SUBJECT} | build_subjects_from_auth(auth)) if auth is not None else {PUBLIC_SUBJECT},
+            space_ids=dto.space_ids,
+        )
+    }
+
+    items: list[SuggestionResult] = []
+
+    for article_id in article_ids:
+        if (article := readable.get(article_id)) is None:
+            continue
+
+        items.append(
+            SuggestionResult(
+                article_id=article.id,
+                space_id=article.space_id,
+                slug=article.slug,
+                title=article.title,
+            )
+        )
+
+        if len(items) >= dto.limit:
+            break
+
+    return SuggestionsResponse(items=items)
+
+
+async def search_articles(
+    organization_id: UUID,
+    auth: AuthUser | None,
+    dto: SearchRequest,
+    *,
+    grant_repository: AccessGrantRepository,
+    article_query_repository: ArticleQueryRepository,
+    search_index: SearchIndexReader,
     embedder: TextEmbedder,
 ) -> SearchResponse:
     """
     Безопасный гибридный поиск по опубликованным статьям.
 
-    1. Область поиска вычисляется до обращения к индексу; пустая — пустой ответ без запроса.
-    2. Индекс ищет только внутри области (фильтр по организации, Space и статьям).
-    3. Кандидаты сверяются с PostgreSQL: публикация, актуальная редакция, архив, область —
-       только после этого фрагменты попадают в ответ.
+    Поисковый индекс может содержать устаревший ACL или даже временно вернуть слишком широкий набор кандидатов.
+    Это не должно приводить к раскрытию данных.
     """
 
-    scope = await resolve_search_scope(auth, dto.space_ids, grant_repository=grant_repository)
+    if dto.space_ids is not None and not dto.space_ids:
+        return SearchResponse(items=[])
+
+    scope = await resolve_search_scope(organization_id, auth, grant_repository=grant_repository)
+
     if scope.is_empty:
         return SearchResponse(items=[])
 
-    query_vector = await embedder.embed_query(dto.query)
-    candidates = await chunk_repository.search(
+    embedding = await embedder(dto.query)
+
+    candidates = await search_index.search(
         query=dto.query,
-        query_vector=query_vector,
-        organization_id=auth.user.organization_id,
+        query_embedding=embedding,
         scope=scope,
-        limit=dto.limit * _OVERFETCH_FACTOR,
-        hits_per_article=_HITS_PER_ARTICLE,
+        space_ids=dto.space_ids,
+        options=SearchOptions(candidates_limit=min(dto.limit * 5, 200), max_hits_per_article=3),
     )
     if not candidates:
         return SearchResponse(items=[])
 
-    published = {
+    # ВАЖНО: новый запрос к БД для защиты от Race Condition
+    readable = {
         article.id: article
-        for article in await article_query_repository.find_published(
-            auth.user.organization_id,
+        for article in await article_query_repository.find_readable_published(
+            organization_id,
             [candidate.article_id for candidate in candidates],
+            subjects=({PUBLIC_SUBJECT} | build_subjects_from_auth(auth)) if auth is not None else {PUBLIC_SUBJECT},
+            space_ids=dto.space_ids,
         )
     }
 
-    items: list[SearchResultResponse] = []
+    items: list[SearchResult] = []
+
     for candidate in candidates:
-        article = published.get(candidate.article_id)
-        if article is None or not scope.allows(article.id, article.space_id):
+        if (article := readable.get(candidate.article_id)) is None:
             continue
 
-        hits = [hit for hit in candidate.hits if hit.revision_id == article.published_revision_id]
+        hits = [
+            hit
+            for hit in candidate.hits
+            if hit.article_id == article.id and hit.revision_id == article.published_revision_id
+        ]
         if not hits:
             continue
 
         items.append(
-            SearchResultResponse(
-                article=SearchArticleResponse(
+            SearchResult(
+                article=SearchArticle(
                     id=article.id,
                     space_id=article.space_id,
                     slug=article.slug,
@@ -114,9 +158,9 @@ async def search_articles(
                 ),
                 score=candidate.score,
                 fragments=[
-                    SearchFragmentResponse(
+                    SearchFragment(
                         chunk_id=hit.chunk_id,
-                        text=hit.text,
+                        text=hit.markdown,
                         heading_path=list(hit.heading_path),
                         anchor=hit.anchor,
                         score=hit.score,
@@ -125,47 +169,8 @@ async def search_articles(
                 ],
             )
         )
-        if len(items) == dto.limit:
+
+        if len(items) >= dto.limit:
             break
 
     return SearchResponse(items=items)
-
-
-async def request_article_reindex(
-    article_id: UUID,
-    auth: AuthUser,
-    *,
-    indexing_queue: IndexingQueue,
-) -> SyncQueuedResponse:
-    if not auth.is_admin:
-        raise PermissionDeniedError("Only administrators can manage the search index.")
-
-    await indexing_queue.enqueue_article(article_id)
-    return SyncQueuedResponse(queued=1)
-
-
-async def reconcile_search_index(
-    auth: AuthUser,
-    *,
-    index_state_repository: ArticleIndexStateRepository,
-    chunk_repository: SearchChunkRepository,
-    indexing_queue: IndexingQueue,
-    full: bool = False,
-) -> SyncQueuedResponse:
-    """
-    Ставит в очередь статьи, чьё состояние в индексе расходится с PostgreSQL (и после смены индекса).
-
-    ``full`` — переиндексировать всё, что должно быть в индексе или могло в нём остаться:
-    нужно, если сам индекс потерян или пересоздан вне приложения.
-    """
-
-    if not auth.is_admin:
-        raise PermissionDeniedError("Only administrators can manage the search index.")
-
-    article_ids = await index_state_repository.find_out_of_sync_article_ids(
-        chunk_repository.index_name, full=full
-    )
-    for article_id in article_ids:
-        await indexing_queue.enqueue_article(article_id)
-
-    return SyncQueuedResponse(queued=len(article_ids))

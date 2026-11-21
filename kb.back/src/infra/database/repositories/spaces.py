@@ -6,7 +6,8 @@ from ..models import SpaceOrm
 
 
 class SpaceMapper:
-    def to_model(self, entity: Space) -> SpaceOrm:
+    @staticmethod
+    def to_model(entity: Space) -> SpaceOrm:
         return SpaceOrm(
             id=entity.id,
             created_at=entity.created_at,
@@ -19,7 +20,8 @@ class SpaceMapper:
             created_by=entity.created_by,
         )
 
-    def from_model(self, model: SpaceOrm) -> Space:
+    @staticmethod
+    def from_model(model: SpaceOrm) -> Space:
         return Space(
             id=model.id,
             created_at=model.created_at,

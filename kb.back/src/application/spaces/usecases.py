@@ -23,7 +23,10 @@ _OWNER_PERMISSIONS = Permission.READ | Permission.WRITE | Permission.PUBLISH | P
 
 
 async def _to_response(
-    space: Space, auth: AuthUser, *, grant_repository: AccessGrantRepository
+    space: Space,
+    auth: AuthUser,
+    *,
+    grant_repository: AccessGrantRepository,
 ) -> SpaceResponse:
     permissions = await resolve_permissions(
         auth, (Resource(type="space", id=space.id),), grant_repository=grant_repository
@@ -91,10 +94,10 @@ async def list_spaces(
     """Пространства, доступные пользователю на чтение."""
 
     space_ids = await grant_repository.find_resource_ids(
-        auth.user.organization_id,
-        build_subjects_from_auth(auth),
-        "space",
-        Permission.READ,
+        organization_id=auth.user.organization_id,
+        subjects=build_subjects_from_auth(auth),
+        resource_type="space",
+        required=Permission.READ,
     )
     spaces = await space_repository.get_by_ids(list(space_ids)) if space_ids else ()
 

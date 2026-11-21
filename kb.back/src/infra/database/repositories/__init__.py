@@ -1,21 +1,24 @@
 from .access import SqlAlchemyAccessGrantRepository
-from .articles import (
-    SqlAlchemyArticleQueryRepository,
-    SqlAlchemyArticleRepository,
-    SqlAlchemyArticleRevisionRepository,
-)
+from .answer_feedback import SqlAlchemyAnswerFeedbackStore
+from .answer_runs import SqlAlchemyAnswerRunStore
+from .article import SqlAlchemyArticleRepository
+from .article_query import SqlAlchemyArticleQueryRepository
 from .collections import SqlAlchemyCollectionPlacementRepository, SqlAlchemyCollectionRepository
-from .search import SqlAlchemyArticleIndexStateRepository, SqlAlchemyImageTextRepository
+from .gap_signals import SqlAlchemyGapSignalStore
+from .knowledge_gaps import SqlAlchemyKnowledgeGapStore
+from .revision import SqlAlchemyArticleRevisionRepository
 from .spaces import SqlAlchemySpaceRepository
 
 __all__ = [
     "SqlAlchemyAccessGrantRepository",
-    "SqlAlchemyArticleIndexStateRepository",
+    "SqlAlchemyAnswerFeedbackStore",
+    "SqlAlchemyAnswerRunStore",
     "SqlAlchemyArticleQueryRepository",
     "SqlAlchemyArticleRepository",
     "SqlAlchemyArticleRevisionRepository",
     "SqlAlchemyCollectionPlacementRepository",
     "SqlAlchemyCollectionRepository",
-    "SqlAlchemyImageTextRepository",
+    "SqlAlchemyGapSignalStore",
+    "SqlAlchemyKnowledgeGapStore",
     "SqlAlchemySpaceRepository",
 ]

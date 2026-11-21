@@ -5,15 +5,19 @@ from pydantic.alias_generators import to_camel
 
 from src.application.access.dtos import PermissionDTO
 
-SPACE_KEY_PATTERN = r"^[A-Z][A-Z0-9_]{1,31}$"
+_SPACE_KEY_PATTERN = r"^[A-Z][A-Z0-9_]{1,31}$"
 
 
 class CreateSpaceDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
-    key: str = Field(pattern=SPACE_KEY_PATTERN, description="Короткий ключ пространства", examples=["ITSM"])
-    name: str = Field(min_length=1, max_length=255, description="Название")
-    description: str | None = Field(default=None, min_length=1, description="Описание")
+    key: str = Field(
+        pattern=_SPACE_KEY_PATTERN,
+        description="Короткий ключ пространства (мнемоника)",
+        examples=["ITSM"],
+    )
+    name: str = Field(min_length=1, max_length=255, description="Название пространства")
+    description: str | None = Field(default=None, min_length=1, description="Описание пространства")
     organization_wide: bool = Field(
         default=False,
         description="Выдать READ всей организации (иначе доступ только по явным grants)",

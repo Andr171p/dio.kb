@@ -1,6 +1,7 @@
 from collections import defaultdict
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from operator import attrgetter
 from uuid import UUID
 
 from ddf.application.exceptions import NotFoundError
@@ -11,12 +12,12 @@ from src.application.articles.access import get_accessible_article
 from src.application.articles.dtos import ArticleSummaryResponse
 from src.application.articles.repositories import ArticleQueryRepository, ArticleRepository
 from src.application.auth import AuthUser
+from src.application.ranking import rank_between
 from src.application.spaces.access import get_accessible_space
 from src.application.spaces.repositories import SpaceRepository
 from src.domain.collections.exceptions import CollectionNotEmptyError
 from src.domain.collections.logic import ensure_valid_article_placement, ensure_valid_collection_parent
 from src.domain.collections.models import Collection, CollectionPlacement
-from src.domain.collections.ranking import rank_between
 from src.domain.collections.vo import CollectionTarget, TargetType
 
 from .access import get_accessible_collection, resolve_collection_permissions
@@ -48,24 +49,21 @@ async def _to_response(
     return CollectionResponse.model_validate({**vars(collection), "permissions": permissions})
 
 
-def _resolve_rank(placements: Sequence[CollectionPlacement], position: RelativePosition) -> str:
-    """Ранг для вставки относительно соседа; ``placements`` отсортированы по ``rank``."""
-
-    anchor_id = position.before_id or position.after_id
-
-    if anchor_id is None:
-        return rank_between(placements[-1].rank if placements else None, None)
-
-    index = next((index for index, placement in enumerate(placements) if placement.id == anchor_id), None)
-    if index is None:
-        raise NotFoundError(f"Placement {anchor_id} not found in collection.")
-
-    if position.before_id is not None:
-        before = placements[index - 1].rank if index > 0 else None
-        return rank_between(before, placements[index].rank)
-
-    after = placements[index + 1].rank if index + 1 < len(placements) else None
-    return rank_between(placements[index].rank, after)
+async def _resolve_rank(
+    collection_id: UUID,
+    position: RelativePosition,
+    *,
+    placement_repository: CollectionPlacementRepository,
+    exclude_placement_id: UUID | None = None,
+) -> str:
+    """Вычисляет новый ранг для вставки элемента в коллекцию."""
+    before_rank, after_rank = await placement_repository.find_rank_bounds(
+        collection_id,
+        before_id=position.before_id,
+        after_id=position.after_id,
+        exclude_placement_id=exclude_placement_id,
+    )
+    return rank_between(before_rank, after_rank)
 
 
 async def _ensure_target_can_be_placed(
@@ -103,11 +101,12 @@ async def _ensure_target_can_be_placed(
             if current_parent is not None and current_parent.id == moving_placement_id:
                 current_parent = None
 
+            ancestor_ids = await placement_repository.find_collection_ancestor_ids(collection.id)
             ensure_valid_collection_parent(
                 parent=collection,
                 child=child,
                 current_parent_id=current_parent.collection_id if current_parent is not None else None,
-                parent_ancestor_ids=await placement_repository.find_collection_ancestor_ids(collection.id),
+                parent_ancestor_ids=ancestor_ids,
             )
 
 
@@ -123,7 +122,7 @@ async def create_collection(
     grant_repository: AccessGrantRepository,
     uow: UnitOfWork,
 ) -> CollectionResponse:
-    """Создаёт коллекцию (WRITE на Space), при ``parent_id`` — сразу в конце родителя."""
+    """Создаёт коллекцию (WRITE на Space), при ``parent_id`` - сразу в конце родителя."""
 
     space = await get_accessible_space(
         space_id,
@@ -161,14 +160,8 @@ async def create_collection(
             article_repository=article_repository,
             grant_repository=grant_repository,
         )
-        siblings = await placement_repository.find_by_collection(parent.id)
-        await placement_repository.create(
-            CollectionPlacement(
-                collection_id=parent.id,
-                target=target,
-                rank=_resolve_rank(siblings, RelativePosition()),
-            )
-        )
+        rank = await _resolve_rank(parent.id, RelativePosition(), placement_repository=placement_repository)
+        await placement_repository.create(CollectionPlacement(collection_id=parent.id, target=target, rank=rank))
 
     await uow.commit()
     return await _to_response(
@@ -318,16 +311,10 @@ async def create_collection_placement(
     )
 
     if await placement_repository.find_target(collection.id, dto.target) is not None:
-        raise CollectionTargetAlreadyPlacedError(
-            f"Target {dto.target.id} is already placed in the collection."
-        )
+        raise CollectionTargetAlreadyPlacedError(f"Target {dto.target.id} is already placed in the collection.")
 
-    siblings = await placement_repository.find_by_collection(collection.id)
-    placement = CollectionPlacement(
-        collection_id=collection.id,
-        target=dto.target,
-        rank=_resolve_rank(siblings, dto.position),
-    )
+    rank = await _resolve_rank(collection.id, dto.position, placement_repository=placement_repository)
+    placement = CollectionPlacement(collection_id=collection.id, target=dto.target, rank=rank)
     await placement_repository.create(placement)
     await uow.commit()
 
@@ -404,13 +391,13 @@ async def move_collection_placement(
                 f"Target {placement.target.id} is already placed in the collection.",
             )
 
-    siblings = [
-        sibling
-        for sibling in await placement_repository.find_by_collection(destination.id)
-        if sibling.id != placement.id
-    ]
+    placement.rank = await _resolve_rank(
+        destination.id,
+        dto.position,
+        placement_repository=placement_repository,
+        exclude_placement_id=placement.id,
+    )
     placement.collection_id = destination.id
-    placement.rank = _resolve_rank(siblings, dto.position)
     placement.updated_at = datetime.now(UTC)
 
     await placement_repository.update(placement)
@@ -441,7 +428,7 @@ async def delete_collection_placement(
     await uow.commit()
 
 
-def _build_navigation(
+def _build_navigation_tree(
     collections: Sequence[Collection],
     placements: Sequence[CollectionPlacement],
     articles: Sequence[ArticleSummaryResponse],
@@ -455,7 +442,7 @@ def _build_navigation(
     placed_collection_ids: set[UUID] = set()
     placed_article_ids: set[UUID] = set()
 
-    for placement in sorted(placements, key=lambda placement: placement.rank):
+    for placement in sorted(placements, key=attrgetter("rank")):
         children[placement.collection_id].append(placement)
         match placement.target.type:
             case TargetType.COLLECTION:
@@ -481,15 +468,11 @@ def _build_navigation(
             title=collection.name,
             slug=collection.slug,
         )
-        for placement in children[collection.id]:
-            if placement.target.type is TargetType.COLLECTION and (
-                child := collections_by_id.get(placement.target.id)
-            ):
-                node.children.append(collection_node(child, placement.id))
-            elif placement.target.type is TargetType.ARTICLE and (
-                article := articles_by_id.get(placement.target.id)
-            ):
-                node.children.append(article_node(article, placement.id))
+        for p in children[collection.id]:
+            if p.target.type is TargetType.COLLECTION and (child := collections_by_id.get(p.target.id)):
+                node.children.append(collection_node(child, p.id))
+            elif p.target.type is TargetType.ARTICLE and (article := articles_by_id.get(p.target.id)):
+                node.children.append(article_node(article, p.id))
         return node
 
     roots = sorted(
@@ -540,4 +523,4 @@ async def get_space_navigation(
         space.id,
         include_drafts=Permission.WRITE in permissions,
     )
-    return _build_navigation(collections, placements, articles)
+    return _build_navigation_tree(collections, placements, articles)

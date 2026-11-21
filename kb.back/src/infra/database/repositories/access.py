@@ -15,7 +15,8 @@ _RESOURCE_MODELS = {"space": SpaceOrm, "collection": CollectionOrm, "article": A
 
 
 class AccessGrantMapper:
-    def to_model(self, entity: AccessGrant) -> AccessGrantOrm:
+    @staticmethod
+    def to_model(entity: AccessGrant) -> AccessGrantOrm:
         return AccessGrantOrm(
             id=entity.id,
             created_at=entity.created_at,
@@ -30,7 +31,8 @@ class AccessGrantMapper:
             permissions=int(entity.permissions),
         )
 
-    def from_model(self, model: AccessGrantOrm) -> AccessGrant:
+    @staticmethod
+    def from_model(model: AccessGrantOrm) -> AccessGrant:
         return AccessGrant(
             id=model.id,
             created_at=model.created_at,
@@ -44,9 +46,7 @@ class AccessGrantMapper:
         )
 
 
-class SqlAlchemyAccessGrantRepository(
-    SqlAlchemyRepository[AccessGrant, AccessGrantOrm], AccessGrantRepository
-):
+class SqlAlchemyAccessGrantRepository(SqlAlchemyRepository[AccessGrant, AccessGrantOrm], AccessGrantRepository):
     model = AccessGrantOrm
     data_mapper = AccessGrantMapper()
 
@@ -79,6 +79,27 @@ class SqlAlchemyAccessGrantRepository(
             ),
         )
         return Permission(await self._session.scalar(stmt) or 0)
+
+    async def find_accessible_resources(
+        self,
+        organization_id: UUID,
+        subjects: Collection[Subject],
+        permission: Permission,
+        *,
+        resource_types: Collection[str],
+    ) -> frozenset[Resource]:
+        if not subjects or not resource_types:
+            return frozenset()
+        stmt = (
+            select(AccessGrantOrm.resource_type, AccessGrantOrm.resource_id)
+            .where(
+                *self._active_subject_grants(organization_id, subjects),
+                AccessGrantOrm.resource_type.in_(resource_types),
+            )
+            .group_by(AccessGrantOrm.resource_type, AccessGrantOrm.resource_id)
+            .having(func.bit_or(AccessGrantOrm.permissions).op("&")(int(permission)) == int(permission))
+        )
+        return frozenset(Resource(type=kind, id=uid) for kind, uid in (await self._session.execute(stmt)).tuples())
 
     async def find_resource_ids(
         self,

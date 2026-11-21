@@ -1,8 +1,9 @@
 from collections.abc import Collection as Iterable
 from uuid import UUID
 
+from ddf.application.exceptions import NotFoundError
 from ddf.infra.database.sqlalchemy import SqlAlchemyRepository
-from sqlalchemy import ColumnElement, func, select, text
+from sqlalchemy import ColumnElement, asc, desc, func, select, text
 
 from src.application.collections.repositories import CollectionPlacementRepository, CollectionRepository
 from src.domain.collections.models import Collection, CollectionPlacement
@@ -30,7 +31,8 @@ _ANCESTORS_QUERY = text("""
 
 
 class CollectionMapper:
-    def to_model(self, entity: Collection) -> CollectionOrm:
+    @staticmethod
+    def to_model(entity: Collection) -> CollectionOrm:
         return CollectionOrm(
             id=entity.id,
             created_at=entity.created_at,
@@ -43,7 +45,8 @@ class CollectionMapper:
             description=entity.description,
         )
 
-    def from_model(self, model: CollectionOrm) -> Collection:
+    @staticmethod
+    def from_model(model: CollectionOrm) -> Collection:
         return Collection(
             id=model.id,
             created_at=model.created_at,
@@ -58,7 +61,8 @@ class CollectionMapper:
 
 
 class CollectionPlacementMapper:
-    def to_model(self, entity: CollectionPlacement) -> CollectionPlacementOrm:
+    @staticmethod
+    def to_model(entity: CollectionPlacement) -> CollectionPlacementOrm:
         return CollectionPlacementOrm(
             id=entity.id,
             created_at=entity.created_at,
@@ -70,7 +74,8 @@ class CollectionPlacementMapper:
             rank=entity.rank,
         )
 
-    def from_model(self, model: CollectionPlacementOrm) -> CollectionPlacement:
+    @staticmethod
+    def from_model(model: CollectionPlacementOrm) -> CollectionPlacement:
         return CollectionPlacement(
             id=model.id,
             created_at=model.created_at,
@@ -145,3 +150,53 @@ class SqlAlchemyCollectionPlacementRepository(
             {"collection_id": collection_id, "max_depth": _MAX_TREE_DEPTH},
         )
         return tuple(result.scalars())
+
+    async def find_rank_bounds(
+            self,
+            collection_id: UUID,
+            *,
+            before_id: UUID | None = None,
+            after_id: UUID | None = None,
+            exclude_placement_id: UUID | None = None,
+    ) -> tuple[str | None, str | None]:
+        conditions = [self.model.collection_id == collection_id]
+
+        if exclude_placement_id:
+            conditions.append(self.model.id != exclude_placement_id)
+
+        # Вставка в конец коллекции
+        if before_id is None and after_id is None:
+            stmt = select(self.model.rank).where(*conditions).order_by(desc(self.model.rank)).limit(1)
+            last_rank = await self._session.scalar(stmt)
+            return last_rank, None
+
+        # Получение ранга якорного элемента по PK
+        anchor_id = before_id or after_id
+        anchor_stmt = (
+            select(self.model.rank)
+            .where(self.model.id == anchor_id, self.model.collection_id == collection_id)
+        )
+        anchor_rank = await self._session.scalar(anchor_stmt)
+        if anchor_rank is None:
+            raise NotFoundError(f"Placement {anchor_id} not found in collection.")
+
+        # Вставка перед якорем -> поиск ближайшего соседа слева (< anchor_rank)
+        if before_id is not None:
+            prev_stmt = (
+                select(self.model.rank)
+                .where(*conditions, self.model.rank < anchor_rank)
+                .order_by(desc(self.model.rank))
+                .limit(1)
+            )
+            prev_rank = await self._session.scalar(prev_stmt)
+            return prev_rank, anchor_rank
+
+        # Вставка после якоря -> ищем ближайшего соседа справа (> anchor_rank)
+        next_stmt = (
+            select(self.model.rank)
+            .where(*conditions, self.model.rank > anchor_rank)
+            .order_by(asc(self.model.rank))
+            .limit(1)
+        )
+        next_rank = await self._session.scalar(next_stmt)
+        return anchor_rank, next_rank

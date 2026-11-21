@@ -2,17 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
+from src.api.dependencies.access import GrantRepositoryDep
+from src.api.dependencies.articles import ArticleQueryRepositoryDep, ArticleRepositoryDep, RevisionRepositoryDep
 from src.api.dependencies.auth import CurrentUser
-from src.api.dependencies.db import UnitOfWorkDep
-from src.api.dependencies.repositories import (
-    ArticleQueryRepositoryDep,
-    ArticleRepositoryDep,
-    CollectionRepositoryDep,
-    GrantRepositoryDep,
-    PlacementRepositoryDep,
-    RevisionRepositoryDep,
-    SpaceRepositoryDep,
-)
+from src.api.dependencies.collections import CollectionRepositoryDep, PlacementRepositoryDep
+from src.api.dependencies.db import DBSession
+from src.api.dependencies.spaces import SpaceRepositoryDep
 from src.application.articles import usecases as articles
 from src.application.articles.dtos import ArticleDetailResponse, ArticleSummaryResponse, CreateArticleDTO
 from src.application.collections import usecases as collections
@@ -23,18 +18,16 @@ from src.application.spaces.dtos import SpaceResponse, UpdateSpaceDTO
 router = APIRouter(prefix="/spaces", tags=["Spaces"])
 
 
-@router.get("", summary="Доступные пространства")
+@router.get("", summary="Доступные пространства", status_code=status.HTTP_200_OK)
 async def list_spaces(
     auth: CurrentUser,
     space_repository: SpaceRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> list[SpaceResponse]:
-    return await spaces.list_spaces(
-        auth, space_repository=space_repository, grant_repository=grant_repository
-    )
+    return await spaces.list_spaces(auth, space_repository=space_repository, grant_repository=grant_repository)
 
 
-@router.get("/{space_id}", summary="Получить пространство")
+@router.get("/{space_id}", summary="Получить пространство", status_code=status.HTTP_200_OK)
 async def get_space(
     space_id: UUID,
     auth: CurrentUser,
@@ -49,14 +42,14 @@ async def get_space(
     )
 
 
-@router.patch("/{space_id}", summary="Обновить пространство")
+@router.patch("/{space_id}", summary="Обновить пространство", status_code=status.HTTP_200_OK)
 async def update_space(
     space_id: UUID,
     dto: UpdateSpaceDTO,
     auth: CurrentUser,
     space_repository: SpaceRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    uow: DBSession,
 ) -> SpaceResponse:
     return await spaces.update_space(
         space_id,
@@ -74,7 +67,7 @@ async def archive_space(
     auth: CurrentUser,
     space_repository: SpaceRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    uow: DBSession,
 ) -> None:
     await spaces.archive_space(
         space_id,
@@ -85,7 +78,7 @@ async def archive_space(
     )
 
 
-@router.get("/{space_id}/navigation", summary="Дерево навигации пространства")
+@router.get("/{space_id}/navigation", summary="Дерево навигации пространства", status_code=status.HTTP_200_OK)
 async def get_space_navigation(
     space_id: UUID,
     auth: CurrentUser,
@@ -120,7 +113,7 @@ async def create_collection(
     placement_repository: PlacementRepositoryDep,
     article_repository: ArticleRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    uow: DBSession,
 ) -> CollectionResponse:
     return await collections.create_collection(
         space_id,
@@ -135,7 +128,7 @@ async def create_collection(
     )
 
 
-@router.get("/{space_id}/articles", summary="Статьи пространства")
+@router.get("/{space_id}/articles", summary="Статьи пространства", status_code=status.HTTP_200_OK)
 async def list_space_articles(
     space_id: UUID,
     auth: CurrentUser,
@@ -165,7 +158,7 @@ async def create_article(
     article_repository: ArticleRepositoryDep,
     revision_repository: RevisionRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    uow: DBSession,
 ) -> ArticleDetailResponse:
     return await articles.create_article(
         space_id,
@@ -179,7 +172,7 @@ async def create_article(
     )
 
 
-@router.get("/{space_id}/articles/{slug}", summary="Опубликованная статья по slug")
+@router.get("/{space_id}/articles/{slug}", summary="Опубликованная статья по slug", status_code=status.HTTP_200_OK)
 async def get_published_article_by_slug(
     space_id: UUID,
     slug: str,

@@ -1,12 +1,9 @@
-from typing import Annotated
+from src.application.links.config import LinkPreviewConfig
+from src.application.links.dtos import LinkPreview
+from src.application.links.types import FetchLinkpreview
+from src.infra.links.http import HttpLinkPreviewFetcher
 
-from fastapi import Depends, Request
+link_preview_config = LinkPreviewConfig()
+link_preview_fetcher = HttpLinkPreviewFetcher(link_preview_config)
 
-from src.application.links.protocols import LinkPreviewFetcher
-
-
-def get_link_preview_fetcher(request: Request) -> LinkPreviewFetcher:
-    return request.app.state.link_preview_fetcher
-
-
-LinkPreviewFetcherDep = Annotated[LinkPreviewFetcher, Depends(get_link_preview_fetcher)]
+__all__ = ["FetchLinkpreview", "LinkPreview", "link_preview_fetcher"]

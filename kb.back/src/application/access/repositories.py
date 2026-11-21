@@ -17,6 +17,16 @@ class AccessGrantRepository(Repository[AccessGrant]):
     ) -> Permission:
         """Объединяет (OR) разрешения активных grants субъектов на ресурсы."""
 
+    async def find_accessible_resources(
+        self,
+        organization_id: UUID,
+        subjects: Collection[Subject],
+        permission: Permission,
+        *,
+        resource_types: Collection[str],
+    ) -> frozenset[Resource]:
+        """Ресурсы, доступные для указанной операции."""
+
     async def find_resource_ids(
         self,
         organization_id: UUID,
@@ -27,7 +37,9 @@ class AccessGrantRepository(Repository[AccessGrant]):
         """Возвращает ресурсы типа ``resource_type``, на которые у субъектов есть ``required``."""
 
     async def find_by_resource(
-        self, organization_id: UUID, resource: Resource
+        self,
+        organization_id: UUID,
+        resource: Resource,
     ) -> tuple[AccessGrant, ...]: ...
 
     async def resource_exists(self, organization_id: UUID, resource: Resource) -> bool:

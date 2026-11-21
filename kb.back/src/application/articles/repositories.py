@@ -1,14 +1,15 @@
 from typing import override
 
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from uuid import UUID
 
 from ddf.application.repositories import Repository
 
+from src.domain.access.vo import Subject
 from src.domain.articles.models import Article, ArticleRevision
 
 from .dtos import ArticleSummaryResponse
-from .models import PublishedArticle
+from .projections import PublishedArticle
 
 
 class ArticleRepository(Repository[Article]):
@@ -26,17 +27,35 @@ class ArticleRevisionRepository(Repository[ArticleRevision]):
 class ArticleQueryRepository:
     """Read-модели статей (JOIN с редакциями), не нагружающие репозиторий агрегата."""
 
-    async def find_space_articles(
-        self, space_id: UUID, *, include_drafts: bool
-    ) -> tuple[ArticleSummaryResponse, ...]:
-        """Неархивные статьи Space; заголовок из текущей (``include_drafts``) или опубликованной редакции."""
+    async def find_space_articles(self, space_id: UUID, *, include_drafts: bool) -> tuple[ArticleSummaryResponse, ...]:
+        """Не архивные статьи Space; заголовок из текущей (``include_drafts``) или опубликованной редакции."""
 
     async def find_published(
         self,
         organization_id: UUID,
         article_ids: Collection[UUID],
     ) -> tuple[PublishedArticle, ...]:
-        """Опубликованные неархивные статьи в активных Space организации."""
+        """Опубликованные неархивный статьи в активных Space организации."""
+
+    async def find_readable_published(
+        self,
+        organization_id: UUID,
+        article_ids: Collection[UUID],
+        *,
+        subjects: Collection[Subject],
+        space_ids: Collection[UUID] | None = None,
+    ) -> Sequence[PublishedArticle]:
+        """
+        Вернуть опубликованные статьи, доступные на чтение.
+
+        Проверяет актуальные:
+        - организацию и публикацию;
+        - состояние пространства и статьи;
+        - READ grants, включая PUBLIC;
+        - membership и роли пользователя.
+
+        Не использует ранее вычисленный SearchScope.
+        """
 
 
 __all__ = ["ArticleQueryRepository", "ArticleRepository", "ArticleRevisionRepository"]

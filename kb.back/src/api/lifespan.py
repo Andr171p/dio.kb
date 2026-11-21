@@ -2,58 +2,52 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from ddf.infra.cache import InMemoryCache
-from ddf.infra.database.sqlalchemy import PostgresConfig
 from fastapi import FastAPI
+from mcp.server import MCPServer
+from redis.asyncio import Redis
 
+from src.api.dependencies.auth import iam_client
+from src.api.dependencies.db import engine
+from src.api.dependencies.links import link_preview_fetcher
+from src.api.dependencies.search import search_index, text_embedder
+from src.application.answers.config import AnswersConfig
 from src.application.auth import Auth
-from src.infra.ai import AiTunnelConfig, OpenAITextEmbedder, create_openai_client
-from src.infra.broker.tasks import TaskiqIndexingQueue, broker
-from src.infra.database.session import create_engine, create_session_factory
-from src.infra.links import HttpLinkPreviewFetcher
-from src.infra.qdrant import QdrantConfig, QdrantSearchChunkRepository, create_qdrant_client
-from src.infra.services.iam import SrvIamClient, SrvIamConfig
+from src.infra.broker.broker import broker
+from src.infra.realtime import create_answer_progress_notifier
+from src.infra.redis import RedisConfig
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Composition root API: создаёт долгоживущие клиенты и закрывает их при остановке."""
+async def lifespan(app: FastAPI, *, mcp: MCPServer) -> AsyncIterator[None]:
+    # noinspection PyUnresolvedReferences
+    app.state.iam_client = iam_client
+    # noinspection PyUnresolvedReferences
+    app.state.auth_cache = InMemoryCache[Auth]()
 
-    engine = create_engine(PostgresConfig())
-    iam_client = SrvIamClient(SrvIamConfig())  # type: ignore[call-arg]
-
-    ai_config = AiTunnelConfig()  # type: ignore[call-arg]
-    openai_client = create_openai_client(ai_config)
-    embedder = OpenAITextEmbedder(
-        openai_client,
-        model=ai_config.embedding_model,
-        dimensions=ai_config.embedding_dimensions,
-        batch_size=ai_config.embedding_batch_size,
-    )
-
-    qdrant_config = QdrantConfig()
-    qdrant_client = create_qdrant_client(qdrant_config)
-    chunk_repository = QdrantSearchChunkRepository(qdrant_client, qdrant_config)
-    await chunk_repository.ensure_collection(embedder.dimensions)
+    answers_config = AnswersConfig()
+    redis: Redis | None = None
+    if answers_config.progress_backend.value == "redis":
+        redis = Redis.from_url(RedisConfig().url, decode_responses=True)
+        app.state.redis = redis
+        app.state.answer_progress_notifier = create_answer_progress_notifier(
+            answers_config.progress_backend,
+            redis_factory=lambda: redis,
+        )
+    else:
+        app.state.redis = None
+        app.state.answer_progress_notifier = create_answer_progress_notifier(answers_config.progress_backend)
 
     await broker.startup()
-
-    app.state.session_factory = create_session_factory(engine)
-    app.state.iam_client = iam_client
-    app.state.auth_cache = InMemoryCache[Auth]()
-    app.state.embedder = embedder
-    app.state.chunk_repository = chunk_repository
-    app.state.indexing_queue = TaskiqIndexingQueue()
-    app.state.link_preview_fetcher = link_preview_fetcher = HttpLinkPreviewFetcher()
-
     try:
-        yield
+        # Mounted Starlette apps do not run their own lifespan; enter the session manager here.
+        async with mcp.session_manager.run():
+            yield
     finally:
         await link_preview_fetcher.close()
         await broker.shutdown()
-        await qdrant_client.close()
-        await openai_client.close()
+        await search_index.close()
+        await text_embedder.close()
         await iam_client.close()
+        if redis is not None:
+            await redis.aclose()
         await engine.dispose()
-
-
-__all__ = ["lifespan"]

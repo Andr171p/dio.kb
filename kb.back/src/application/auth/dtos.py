@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import IntEnum, auto
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -9,11 +9,10 @@ _STUB_ORGANIZATION_ID = UUID("00000000-0000-0000-0000-000000000000")
 ADMIN_ROLE = "admin"
 
 
-class AuthType(StrEnum):
-    """Тип аутентифицированного субъекта (роль — отдельное понятие, см. ``roles``)."""
-
-    USER = "user"
-    SERVICE = "service"
+class AuthType(IntEnum):
+    USER = auto()
+    CLIENT = auto()
+    ADMIN = auto()
 
 
 class Auth(BaseModel):

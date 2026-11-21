@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class QdrantConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="QDRANT_")
 
-    url: HttpUrl = Field(default=HttpUrl("http://localhost:6333"), description="URL Qdrant (HTTP API)")
+    url: HttpUrl = Field(default="http://localhost:6333", description="URL Qdrant (HTTP API)")
     api_key: SecretStr | None = Field(default=None, description="API ключ Qdrant")
     timeout: PositiveInt = Field(default=30, description="Таймаут запросов в секундах")
 

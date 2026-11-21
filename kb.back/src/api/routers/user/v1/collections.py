@@ -2,27 +2,23 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
+from src.api.dependencies.access import GrantRepositoryDep
+from src.api.dependencies.articles import ArticleRepositoryDep
 from src.api.dependencies.auth import CurrentUser
-from src.api.dependencies.db import UnitOfWorkDep
-from src.api.dependencies.repositories import (
-    ArticleRepositoryDep,
-    CollectionRepositoryDep,
-    GrantRepositoryDep,
-    PlacementRepositoryDep,
-)
-from src.application.collections import usecases
+from src.api.dependencies.collections import CollectionRepositoryDep, PlacementRepositoryDep
+from src.api.dependencies.db import DBSession
+from src.application.collections import usecases as collections
 from src.application.collections.dtos import (
     CollectionPlacementResponse,
     CollectionResponse,
     CreatePlacementDTO,
-    MovePlacementDTO,
     UpdateCollectionDTO,
 )
 
-router = APIRouter(tags=["Collections"])
+router = APIRouter(prefix="/collections", tags=["Collections"])
 
 
-@router.get("/collections/{collection_id}", summary="Получить коллекцию")
+@router.get("/{collection_id}", summary="Получить коллекцию", status_code=status.HTTP_200_OK)
 async def get_collection(
     collection_id: UUID,
     auth: CurrentUser,
@@ -30,7 +26,7 @@ async def get_collection(
     placement_repository: PlacementRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> CollectionResponse:
-    return await usecases.get_collection(
+    return await collections.get_collection(
         collection_id,
         auth,
         collection_repository=collection_repository,
@@ -39,7 +35,7 @@ async def get_collection(
     )
 
 
-@router.patch("/collections/{collection_id}", summary="Обновить коллекцию")
+@router.patch("/{collection_id}", summary="Обновить коллекцию", status_code=status.HTTP_200_OK)
 async def update_collection(
     collection_id: UUID,
     dto: UpdateCollectionDTO,
@@ -47,9 +43,9 @@ async def update_collection(
     collection_repository: CollectionRepositoryDep,
     placement_repository: PlacementRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    uow: DBSession,
 ) -> CollectionResponse:
-    return await usecases.update_collection(
+    return await collections.update_collection(
         collection_id,
         dto,
         auth,
@@ -61,7 +57,7 @@ async def update_collection(
 
 
 @router.delete(
-    "/collections/{collection_id}",
+    "/{collection_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Архивировать пустую коллекцию",
 )
@@ -71,9 +67,9 @@ async def archive_collection(
     collection_repository: CollectionRepositoryDep,
     placement_repository: PlacementRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    uow: DBSession,
 ) -> None:
-    await usecases.archive_collection(
+    await collections.archive_collection(
         collection_id,
         auth,
         collection_repository=collection_repository,
@@ -83,7 +79,7 @@ async def archive_collection(
     )
 
 
-@router.get("/collections/{collection_id}/placements", summary="Элементы коллекции по порядку")
+@router.get("/{collection_id}/placements", summary="Элементы коллекции по порядку", status_code=status.HTTP_200_OK)
 async def list_collection_placements(
     collection_id: UUID,
     auth: CurrentUser,
@@ -91,7 +87,7 @@ async def list_collection_placements(
     placement_repository: PlacementRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> list[CollectionPlacementResponse]:
-    return await usecases.list_collection_placements(
+    return await collections.list_collection_placements(
         collection_id,
         auth,
         collection_repository=collection_repository,
@@ -101,7 +97,7 @@ async def list_collection_placements(
 
 
 @router.post(
-    "/collections/{collection_id}/placements",
+    "/{collection_id}/placements",
     status_code=status.HTTP_201_CREATED,
     summary="Разместить статью или коллекцию",
 )
@@ -113,61 +109,15 @@ async def create_collection_placement(
     placement_repository: PlacementRepositoryDep,
     article_repository: ArticleRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    uow: DBSession,
 ) -> CollectionPlacementResponse:
-    return await usecases.create_collection_placement(
+    return await collections.create_collection_placement(
         collection_id,
         dto,
         auth,
         collection_repository=collection_repository,
         placement_repository=placement_repository,
         article_repository=article_repository,
-        grant_repository=grant_repository,
-        uow=uow,
-    )
-
-
-@router.patch("/placements/{placement_id}", summary="Переместить элемент")
-async def move_collection_placement(
-    placement_id: UUID,
-    dto: MovePlacementDTO,
-    auth: CurrentUser,
-    collection_repository: CollectionRepositoryDep,
-    placement_repository: PlacementRepositoryDep,
-    article_repository: ArticleRepositoryDep,
-    grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
-) -> CollectionPlacementResponse:
-    return await usecases.move_collection_placement(
-        placement_id,
-        dto,
-        auth,
-        collection_repository=collection_repository,
-        placement_repository=placement_repository,
-        article_repository=article_repository,
-        grant_repository=grant_repository,
-        uow=uow,
-    )
-
-
-@router.delete(
-    "/placements/{placement_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Убрать элемент из коллекции",
-)
-async def delete_collection_placement(
-    placement_id: UUID,
-    auth: CurrentUser,
-    collection_repository: CollectionRepositoryDep,
-    placement_repository: PlacementRepositoryDep,
-    grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
-) -> None:
-    await usecases.delete_collection_placement(
-        placement_id,
-        auth,
-        collection_repository=collection_repository,
-        placement_repository=placement_repository,
         grant_repository=grant_repository,
         uow=uow,
     )
