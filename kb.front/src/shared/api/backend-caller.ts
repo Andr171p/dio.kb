@@ -12,6 +12,8 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** Подставлять ли access-токен. По умолчанию — да */
   auth?: boolean;
+  /** Дополнительные заголовки (например Idempotency-Key, Accept) */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -32,12 +34,24 @@ export class BackendCaller {
     return this.#json<T>('POST', path, options);
   }
 
+  put<T = void>(path: string, options?: RequestOptions): Promise<T> {
+    return this.#json<T>('PUT', path, options);
+  }
+
   patch<T = void>(path: string, options?: RequestOptions): Promise<T> {
     return this.#json<T>('PATCH', path, options);
   }
 
   delete(path: string, options?: RequestOptions): Promise<void> {
     return this.#json<void>('DELETE', path, options);
+  }
+
+  /**
+   * Сырой Response с bearer-auth и повтором после 401.
+   * Нужен для SSE и других streaming-ответов, где нельзя сразу читать JSON.
+   */
+  send(method: string, path: string, options?: RequestOptions): Promise<Response> {
+    return this.#send(method, path, options);
   }
 
   async #json<T>(
@@ -53,7 +67,14 @@ export class BackendCaller {
   async #send(
     method: string,
     path: string,
-    { query, body, form, signal, auth = true }: RequestOptions = {},
+    {
+      query,
+      body,
+      form,
+      signal,
+      auth = true,
+      headers,
+    }: RequestOptions = {},
   ): Promise<Response> {
     const request = (token: string | null) =>
       fetch(this.#url(path, query), {
@@ -62,6 +83,7 @@ export class BackendCaller {
         headers: {
           ...(body !== undefined && { 'Content-Type': 'application/json' }),
           ...(token && { Authorization: `Bearer ${token}` }),
+          ...headers,
         },
         body: form
           ? new URLSearchParams(form)

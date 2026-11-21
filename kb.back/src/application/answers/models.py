@@ -4,6 +4,7 @@ from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 from .dtos import AnswerResponse, AnswerStatus
 
@@ -24,7 +25,12 @@ class AnswerStage(StrEnum):
 
 
 class AnswerUsage(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+        alias_generator=to_camel,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
     input_tokens: int = Field(ge=0)
     output_tokens: int = Field(ge=0)
@@ -35,6 +41,12 @@ class AnswerUsage(BaseModel):
 
 class AnswerRun(BaseModel):
     """Долговременная запись попытки, не доменный агрегат."""
+
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
     id: UUID
     organization_id: UUID
@@ -68,7 +80,12 @@ class AnswerRun(BaseModel):
 
 
 class AnswerProgressEvent(BaseModel):
-    model_config = ConfigDict(frozen=True, populate_by_name=True)
+    model_config = ConfigDict(
+        frozen=True,
+        populate_by_name=True,
+        alias_generator=to_camel,
+        serialize_by_alias=True,
+    )
 
     answer_id: UUID
     sequence: int = Field(ge=0)

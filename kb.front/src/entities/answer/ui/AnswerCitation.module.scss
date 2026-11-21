@@ -1,0 +1,31 @@
+@use '@shared/styles/mixins' as *;
+
+.citation {
+  @include reset-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0 2px;
+  border-radius: 999px;
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  vertical-align: middle;
+  text-decoration: none;
+
+  &:hover {
+    filter: brightness(0.96);
+  }
+
+  &:focus-visible {
+    @include focus-ring(1px);
+  }
+}
+
+.unknown {
+  margin: 0 2px;
+  font: 600 11px/1 var(--font-ui);
+  color: var(--color-text-tertiary);
+  vertical-align: middle;
+}

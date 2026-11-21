@@ -4,7 +4,12 @@ import {
   useSpaceArticles,
   type ArticleSummary,
 } from '@entities/article';
-import { markdownToSnippet, searchArticles } from '@entities/search';
+import {
+  markdownToSnippet,
+  searchArticles,
+  suggestArticles,
+  type SearchSuggestion,
+} from '@entities/search';
 import { useSpaces } from '@entities/space';
 import { isAbortError } from '@shared/api';
 import { useDebouncedValue } from '@shared/lib/hooks';
@@ -46,13 +51,34 @@ export function useCommandResults(query: string, open: boolean) {
     status: 'idle' | 'loading' | 'ready' | 'error';
   }>({ query: '', items: [], status: 'idle' });
 
-  // Списки статей нужны для мгновенного поиска по заголовкам
+  const [suggestions, setSuggestions] = useState<{
+    query: string;
+    items: SearchSuggestion[];
+  }>({ query: '', items: [] });
+
+  // Локальные статьи — мгновенный fallback, пока едут подсказки с API
   useEffect(() => {
     if (!open) return;
     spaces.forEach((space) => void loadSpaceArticles(space.id));
   }, [open, spaces]);
 
-  const titleMatches = useMemo<CommandArticle[]>(() => {
+  useEffect(() => {
+    if (!open || debounced.length < MIN_CONTENT_QUERY) return;
+    const controller = new AbortController();
+
+    void suggestArticles(debounced, {
+      limit: TITLE_LIMIT,
+      signal: controller.signal,
+    })
+      .then((items) => setSuggestions({ query: debounced, items }))
+      .catch((error: unknown) => {
+        if (!isAbortError(error)) setSuggestions({ query: debounced, items: [] });
+      });
+
+    return () => controller.abort();
+  }, [debounced, open]);
+
+  const localTitleMatches = useMemo<CommandArticle[]>(() => {
     if (!trimmed) return [];
     const needle = normalize(trimmed);
     const all = spaces.flatMap((space) => bySpace[space.id]?.items ?? []);
@@ -65,7 +91,6 @@ export function useCommandResults(query: string, open: boolean) {
           index: normalize(article.title).indexOf(needle),
         }))
         .filter(({ index }) => index >= 0)
-        // Совпадение в начале заголовка важнее
         .sort(
           (a, b) =>
             a.index - b.index ||
@@ -80,6 +105,15 @@ export function useCommandResults(query: string, open: boolean) {
         }))
     );
   }, [trimmed, spaces, bySpace]);
+
+  const titleMatches =
+    suggestions.query === debounced && suggestions.items.length > 0
+      ? suggestions.items.map((item) => ({
+          id: item.articleId,
+          title: item.title,
+          spaceId: item.spaceId,
+        }))
+      : localTitleMatches;
 
   useEffect(() => {
     if (!open || debounced.length < MIN_CONTENT_QUERY) return;
@@ -116,9 +150,7 @@ export function useCommandResults(query: string, open: boolean) {
     return () => controller.abort();
   }, [debounced, open]);
 
-  // Статьи, уже найденные по заголовку, не дублируем в результатах по содержимому
   const titleIds = new Set(titleMatches.map((item) => item.id));
-  // Ответ на прошлый запрос не показываем: это ещё «загрузка»
   const fresh = content.query === debounced;
   const contentMatches = fresh
     ? content.items.filter((item) => !titleIds.has(item.id))

@@ -7,6 +7,7 @@ import {
   FileText,
   Moon,
   Search,
+  Sparkles,
   TextSearch,
 } from 'lucide-react';
 import {
@@ -21,6 +22,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router';
 import { hasPermission } from '@entities/access-grant';
 import { useSpaces, type Space } from '@entities/space';
+import { markAnswerAutoStart } from '@features/answer-generation';
 import { routes } from '@shared/config/routes';
 import { toggleTheme } from '@shared/lib/theme';
 import { Kbd } from '@shared/ui/kbd';
@@ -134,17 +136,33 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
     const actions: CommandItem[] = [];
     if (trimmed)
-      actions.push({
-        key: 'action:search',
-        icon: TextSearch,
-        title: (
-          <>
-            Искать «<span className={styles.query}>{trimmed}</span>» во всех
-            статьях
-          </>
-        ),
-        onSelect: () => go(routes.search(trimmed)),
-      });
+      actions.push(
+        {
+          key: 'action:search',
+          icon: TextSearch,
+          title: (
+            <>
+              Искать «<span className={styles.query}>{trimmed}</span>» во всех
+              статьях
+            </>
+          ),
+          onSelect: () => go(routes.search(trimmed)),
+        },
+        {
+          key: 'action:ai-answer',
+          icon: Sparkles,
+          title: (
+            <>
+              Получить ответ от ИИ на «
+              <span className={styles.query}>{trimmed}</span>»
+            </>
+          ),
+          onSelect: () => {
+            markAnswerAutoStart(trimmed);
+            go(routes.search(trimmed, { ai: true }));
+          },
+        },
+      );
     else {
       if (writableSpace)
         actions.push({

@@ -1,5 +1,12 @@
-.mark {
+.mark,
+.knowledgeMark {
   flex: none;
+  display: block;
+  object-fit: contain;
+}
+
+.knowledgeMark {
+  border-radius: 4px;
 }
 
 .logo {

@@ -28,6 +28,15 @@ export const router = createBrowserRouter([
           })),
       },
       {
+        path: 'knowledge/improvements/:gapId?',
+        lazy: () =>
+          import('@pages/knowledge-improvements').then(
+            ({ KnowledgeImprovementsPage }) => ({
+              Component: KnowledgeImprovementsPage,
+            }),
+          ),
+      },
+      {
         path: 'spaces/:spaceId',
         lazy: () =>
           import('@pages/space').then(({ SpacePage }) => ({

@@ -2,10 +2,18 @@
 export const routes = {
   home: () => '/',
   login: () => '/login',
-  search: (query?: string) =>
-    query
-      ? `/search?${new URLSearchParams({ q: query }).toString()}`
-      : '/search',
+  search: (query?: string, options?: { ai?: boolean; answerId?: string }) => {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (options?.answerId) params.set('answer', options.answerId);
+    if (options?.ai) params.set('ai', '1');
+    const search = params.toString();
+    return search ? `/search?${search}` : '/search';
+  },
+  knowledgeImprovements: (gapId?: string) =>
+    gapId
+      ? `/knowledge/improvements/${gapId}`
+      : '/knowledge/improvements',
   space: (spaceId: string) => `/spaces/${spaceId}`,
   newArticle: (spaceId: string, collectionId?: string) =>
     `/spaces/${spaceId}/new${collectionId ? `?collection=${collectionId}` : ''}`,

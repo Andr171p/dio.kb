@@ -1,7 +1,7 @@
 @use '@shared/styles/mixins' as *;
 
 .page {
-  max-width: 860px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-8) var(--space-16);
 
@@ -10,8 +10,68 @@
   }
 }
 
+.workspace {
+  margin-top: var(--space-8);
+}
+
+.resultsTitle {
+  margin: 0 0 var(--space-4);
+  font: var(--text-subtitle);
+  color: var(--color-text-secondary);
+}
+
 .search {
   position: relative;
+  z-index: 2;
+}
+
+.suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin: 0;
+  padding: var(--space-2);
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-popover);
+}
+
+.suggestStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.suggestItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-control);
+  color: inherit;
+  text-decoration: none;
+  font: 400 14px/20px var(--font-text);
+
+  svg {
+    flex: none;
+    color: var(--color-text-tertiary);
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-surface-hover);
+  }
+}
+
+.suggestActive {
+  background: var(--color-surface-hover);
 }
 
 .searchIcon {
@@ -106,7 +166,7 @@
 }
 
 .results {
-  margin-top: var(--space-8);
+  margin-top: 0;
 }
 
 .tips {

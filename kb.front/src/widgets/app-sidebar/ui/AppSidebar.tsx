@@ -6,6 +6,7 @@ import {
   PanelLeftClose,
   Plus,
   Search,
+  Sparkles,
   TextSearch,
 } from 'lucide-react';
 import { useEffect } from 'react';
@@ -150,6 +151,15 @@ export function AppSidebar({ onOpenSearch }: AppSidebarProps) {
           >
             <TextSearch size={16} aria-hidden />
             Поиск по содержимому
+          </NavLink>
+          <NavLink
+            to={routes.knowledgeImprovements()}
+            className={({ isActive }) =>
+              clsx(styles.navItem, isActive && styles.navActive)
+            }
+          >
+            <Sparkles size={16} aria-hidden />
+            Улучшения знаний
           </NavLink>
         </nav>
 

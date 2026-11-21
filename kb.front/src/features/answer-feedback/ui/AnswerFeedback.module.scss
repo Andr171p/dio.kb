@@ -1,0 +1,114 @@
+@use '@shared/styles/mixins' as *;
+
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+}
+
+.disclaimer {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.iconBtn {
+  @include reset-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-tertiary);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-border-strong);
+    color: var(--color-text-secondary);
+  }
+
+  &:focus-visible {
+    @include focus-ring(1px);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+  }
+}
+
+.active {
+  border-color: color-mix(in srgb, var(--color-info) 35%, var(--color-border));
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+.reasons {
+  flex: 1 1 100%;
+  margin-top: var(--space-2);
+}
+
+.reasonsLabel {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.reasonList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.reason {
+  @include reset-button;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-round);
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+
+  &:hover {
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring(1px);
+  }
+}
+
+.reasonActive {
+  border-color: color-mix(in srgb, var(--color-info) 35%, var(--color-border));
+  background: var(--color-info-soft);
+  color: var(--color-text);
+}
+
+.comment {
+  display: block;
+  width: 100%;
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-paper);
+  font: 400 13px/18px var(--font-text);
+  color: var(--color-text);
+  resize: vertical;
+
+  &:focus-visible {
+    border-color: var(--color-info);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-info-soft);
+  }
+}

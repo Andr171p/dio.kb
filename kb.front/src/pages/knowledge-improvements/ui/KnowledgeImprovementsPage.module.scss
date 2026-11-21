@@ -1,0 +1,94 @@
+@use '@shared/styles/mixins' as *;
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-8) var(--space-16);
+
+  @include mobile {
+    padding: var(--space-4);
+  }
+}
+
+.intro {
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.lead,
+.meta,
+.rationale,
+.recommendation {
+  margin-top: var(--space-2);
+  font: 400 14px/22px var(--font-text);
+  color: var(--color-text-secondary);
+}
+
+.recommendation {
+  margin-bottom: var(--space-4);
+  color: var(--color-text);
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--space-6);
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detailMain {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.detailSide {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+}
+
+.sideTitle {
+  margin: 0 0 var(--space-4);
+  font: var(--text-subtitle);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--space-3);
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.select,
+.textarea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  font: 400 13px/18px var(--font-text);
+  color: var(--color-text);
+
+  &:focus-visible {
+    border-color: var(--color-focus);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
+  }
+}
+
+.textarea {
+  resize: vertical;
+}
