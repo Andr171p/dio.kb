@@ -23,7 +23,7 @@ mcp_http_app: Starlette = mcp.streamable_http_app(
     ),
 )
 
-# Mounted under /api/mcp the SDK's well-known route is unreachable at the RFC path;
+# Mounted under `/api/mcp` the SDK's well-known route is unreachable at the RFC path;
 # serve discovery on the host app at the origin instead.
 oauth_protected_resource_routes: list[Route] = create_protected_resource_routes(
     resource_url=mcp_config.resource_url,
