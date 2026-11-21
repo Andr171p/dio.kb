@@ -30,4 +30,4 @@ def get_outbox(session: DBSession) -> OutboxStore:
 
 OutboxDep = Annotated[OutboxStore, Depends(get_outbox)]
 
-__all__ = ["DBSession", "OutboxDep", "engine"]
+__all__ = ["DBSession", "OutboxDep", "engine", "sessionmaker"]

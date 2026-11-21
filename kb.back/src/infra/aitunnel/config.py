@@ -18,3 +18,7 @@ class AiTunnelConfig(BaseSettings):
         default="gpt-4.1-nano",
         description="Vision-модель для OCR и описания изображений",
     )
+    answer_model: str = Field(
+        default="gpt-4.1-nano",
+        description="Дешёвая chat-модель для AI Answers (structured output)",
+    )

@@ -7,9 +7,17 @@ def test_service_routes_are_read_only_except_search() -> None:
     assert "200" in paths["/api/service/v1/collections/{collection_id}/placements"]["get"]["responses"]
     assert "200" in paths["/api/service/v1/search"]["post"]["responses"]
     assert "200" in paths["/api/service/v1/search/suggestions"]["post"]["responses"]
+    writable_prefixes = (
+        "/api/service/v1/search",
+        "/api/service/v1/answers",
+    )
     for path, operations in paths.items():
-        if path.startswith("/api/service/"):
-            assert set(operations) <= ({"get", "post"} if path.startswith("/api/service/v1/search") else {"get"})
+        if not path.startswith("/api/service/"):
+            continue
+        if any(path.startswith(prefix) for prefix in writable_prefixes):
+            assert set(operations) <= {"get", "post", "put"}
+        else:
+            assert set(operations) <= {"get"}
 
 
 def test_service_routes_reject_non_service_identity() -> None:

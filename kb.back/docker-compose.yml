@@ -7,3 +7,5 @@ include:
     env_file: .env
   - path: docker/rabbitmq.docker-compose.yml
     env_file: .env
+  - path: docker/redis.docker-compose.yml
+    env_file: .env

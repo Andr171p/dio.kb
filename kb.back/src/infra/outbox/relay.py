@@ -1,5 +1,5 @@
 """
-Outbox relay: доставляет события из ``outbox_messages`` в очередь индексации (at-least-once).
+Outbox relay: доставляет события из ``outbox_messages`` в очередь (at-least-once).
 
 Запуск: ``python -m src.infra.outbox.relay``. Несколько экземпляров безопасны (``FOR UPDATE SKIP LOCKED``).
 """
@@ -15,10 +15,11 @@ from ddf.infra.database.sqlalchemy import PostgresConfig
 from ddf.infra.outbox.sqlalchemy import PostgresOutboxListener, SqlAlchemyOutboxStore, run_postgres_notify_worker
 from ddf.infra.outbox.worker import OutboxWorkerConfig
 
+from src.application.answers.events import GenerateAnswerRequested
 from src.application.indexing.commands import IndexArticle
 from src.domain.articles.events import ArticleArchived, ArticlePublished, ArticleUnpublished
 from src.infra.broker.broker import broker
-from src.infra.broker.enqueue import enqueue_index_command
+from src.infra.broker.enqueue import enqueue_generate_answer, enqueue_index_command
 from src.infra.database.connection import create_database
 from src.infra.outbox import OUTBOX_CHANNEL
 
@@ -34,6 +35,8 @@ async def run_outbox_relay() -> None:
             if isinstance(event, ArticlePublished | ArticleUnpublished | ArticleArchived):
                 command = IndexArticle(organization_id=event.organization_id, article_id=event.article_id)
                 await enqueue_index_command(command)
+            elif isinstance(event, GenerateAnswerRequested):
+                await enqueue_generate_answer(event.run_id)
 
     @asynccontextmanager
     async def processor_factory() -> AsyncIterator[OutboxProcessor]:

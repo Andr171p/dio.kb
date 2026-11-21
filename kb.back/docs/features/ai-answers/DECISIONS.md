@@ -1,0 +1,78 @@
+# AI Answers / Knowledge Gaps — решения для backend-реализации
+
+> **Статус:** Accepted (итерация A)  
+> **Дата:** 21 ноября 2026 г.  
+> **Контекст:** реализация по `DIOS_KB_AI_ANSWERS_KNOWLEDGE_GAPS_IMPLEMENTATION.md`, пока только backend.  
+> **Итерация B (Knowledge Gaps):** отдельно, после AI Answers.
+
+## Согласованный scope — итерация A
+
+| Включено | Отложено |
+|---|---|
+| DTOs, evidence, citations, `answer_question` | Knowledge Gaps (Phase 4) |
+| `answer_runs` + store (claim/lease) + Alembic | AI-assisted authoring (Phase 5) |
+| Taskiq + outbox enqueue generate | Durable progress event log |
+| LLM structured generation через AI Tunnel | Cancel endpoint |
+| SSE progress (snapshot + heartbeat) | Claim-level faithfulness |
+| `POST/GET /answers`, feedback `PUT` | Rate limiter / cost dashboards |
+| Redis (docker + optional notifier) | Frontend / Next.js |
+| Unit + store/API tests | |
+
+---
+
+## Принятые решения
+
+### 1. Scope
+**Accepted:** сначала только AI Answers; Gaps — следующей итерацией.
+
+### 2. API surface
+**Accepted:** оба роутера — `/api/user/v1/answers` и `/api/service/v1/answers`.  
+Отличие: auth-зависимость роутера (`CurrentUser` vs client gate + user) и дублирование тонких endpoints; use cases общие.
+
+### 3. Auth во worker и повторная проверка прав
+**Accepted:** права **перепроверяются** по актуальному состоянию ACL (PostgreSQL), потому что grants могут отозвать.
+
+Практическая схема MVP:
+
+1. В `AnswerRun` храним `principal_id`, `principal_type`, `organization_id` (и при необходимости snapshot ролей только как hint для search scope).
+2. Worker при retrieval/validation и API при `GET`/`feedback` опираются на **текущие** AccessGrants / `find_readable_published`, а не на «замороженный» набор статей из момента `POST`.
+3. Если во время generation доступ к источникам пропал → `FAILED` + `ACCESS_CHANGED`, без выдачи текста.
+4. На `GET` завершённого ответа — повторная проверка читаемости сохранённых sources; при отказе — безопасный отказ без цитат.
+
+Полный re-fetch membership/ролей из IAM (если появится trusted service API) — улучшение поверх этой схемы; до него subjects строятся из trusted `user_id` + `organization_id` (+ публичный subject), а авторитет — KB grants в PostgreSQL.
+
+### 4. Progress / Redis
+**Accepted:** добавить Redis по шаблону остальных docker-сервисов проекта.  
+PostgreSQL snapshot — source of truth; Redis Pub/Sub — уведомления после commit.  
+Для single-instance/dev допустим fallback `memory`, но Redis в compose присутствует.
+
+### 5. Privacy
+**Accepted:** default `full` (`ANSWERS_PRIVACY_MODE`). Retention/scrub — позже.
+
+### 6. URL источников
+**Accepted (временно):** `/spaces/{space_id}/articles/{slug}#{anchor}` (hash опционален).  
+Формирование вынесено в одну функцию/`BuildSourceUrl`, чтобы сменить формат без правки пайплайна.
+
+### 7. LLM / AI Tunnel
+**Accepted:** конфиг из `.env` / `AITUNNEL_*`. Для разработки — дешёвые модели, экономный лимит токенов (`ANSWERS_*` + отдельная `AITUNNEL_ANSWER_MODEL`).
+
+### 8. Knowledge Gaps grants
+**Accepted:** отложено вместе с итерацией B (см. п.1).
+
+### 9. Прочее (без возражений)
+- Outbox: application message `GenerateAnswer` (без domain aggregate) + relay → Taskiq; payload задачи — `run_id`.
+- Idempotency-Key на `POST` — да.
+- Cancel — нет в A.
+
+---
+
+## Чеклист
+
+- [x] Scope: только A (Answers+SSE+Feedback)
+- [x] API: user + service
+- [x] Worker/API: повторная проверка актуальных прав
+- [x] Redis в docker по шаблону проекта
+- [x] Privacy: full
+- [x] Source URL формат (сменный)
+- [x] Cheap models / .env для AI Tunnel
+- [x] Gaps — later
