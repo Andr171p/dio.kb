@@ -12,7 +12,7 @@ class SqlAlchemyAnswerFeedbackStore:
     def __init__(self, sessionmaker: async_sessionmaker[AsyncSession]) -> None:
         self._sessionmaker = sessionmaker
 
-    async def upsert(
+    async def create_or_update(
         self,
         *,
         answer_id: UUID,

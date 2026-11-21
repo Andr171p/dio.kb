@@ -9,6 +9,7 @@ from redis.asyncio import Redis
 from taskiq import TaskiqEvents, TaskiqState
 
 from src.application.answers.config import AnswersConfig
+from src.application.knowledge_gaps.config import KnowledgeGapsConfig
 from src.application.search import usecases as search_usecases
 from src.infra.aitunnel import AiTunnelAnswerGenerator, AiTunnelConfig
 from src.infra.broker import tasks  # noqa: F401 -- регистрирует tasks на брокере
@@ -19,6 +20,8 @@ from src.infra.database.repositories import (
     SqlAlchemyAccessGrantRepository,
     SqlAlchemyAnswerRunStore,
     SqlAlchemyArticleQueryRepository,
+    SqlAlchemyGapSignalStore,
+    SqlAlchemyKnowledgeGapStore,
 )
 from src.infra.qdrant import QdrantConfig, QdrantSearchIndex
 from src.infra.realtime import create_answer_progress_notifier
@@ -73,7 +76,10 @@ async def startup(state: TaskiqState) -> None:
 
         state.worker_id = str(uuid4())
         state.answers_config = answers_config
+        state.gaps_config = KnowledgeGapsConfig()
         state.answer_run_store = SqlAlchemyAnswerRunStore(sessionmaker)
+        state.gap_signal_store = SqlAlchemyGapSignalStore(sessionmaker)
+        state.knowledge_gap_store = SqlAlchemyKnowledgeGapStore(sessionmaker)
         state.article_query_repository = _SessionArticleQueryRepository(sessionmaker)
         state.answer_generate = answer_generator.generate
         state.answer_progress_notify = progress.notify

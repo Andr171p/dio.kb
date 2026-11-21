@@ -17,4 +17,6 @@ async def generate_answer_task(run_id: UUID, state: TaskiqState = TaskiqDepends(
         config=state.answers_config,
         notify=state.answer_progress_notify,
         owner=f"worker:{state.worker_id}",
+        gap_signal_store=state.gap_signal_store,
+        gaps_config=state.gaps_config,
     )

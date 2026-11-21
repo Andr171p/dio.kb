@@ -1,9 +1,8 @@
 # AI Answers / Knowledge Gaps — решения для backend-реализации
 
-> **Статус:** Accepted (итерация A)  
+> **Статус:** Accepted (итерации A + B)  
 > **Дата:** 21 ноября 2026 г.  
-> **Контекст:** реализация по `DIOS_KB_AI_ANSWERS_KNOWLEDGE_GAPS_IMPLEMENTATION.md`, пока только backend.  
-> **Итерация B (Knowledge Gaps):** отдельно, после AI Answers.
+> **Контекст:** реализация по `DIOS_KB_AI_ANSWERS_KNOWLEDGE_GAPS_IMPLEMENTATION.md`, пока только backend.
 
 ## Согласованный scope — итерация A
 
@@ -57,12 +56,38 @@ PostgreSQL snapshot — source of truth; Redis Pub/Sub — уведомлени�
 **Accepted:** конфиг из `.env` / `AITUNNEL_*`. Для разработки — дешёвые модели, экономный лимит токенов (`ANSWERS_*` + отдельная `AITUNNEL_ANSWER_MODEL`).
 
 ### 8. Knowledge Gaps grants
-**Accepted:** отложено вместе с итерацией B (см. п.1).
+**Accepted (итерация B, MVP):** без отдельных `knowledge_gap:*` Permission flags.
+
+- Список/карточка: `auth.is_admin` **или** `WRITE` на `space_id` gap (если задан).
+- Gaps без `space_id` (org triage): только `admin`.
+- Mutation (triage/assign/start/resolve/dismiss/reopen): те же правила.
+- Отдельные grants `knowledge_gap:*` — после согласования с моделью AccessGrants.
 
 ### 9. Прочее (без возражений)
 - Outbox: application message `GenerateAnswer` (без domain aggregate) + relay → Taskiq; payload задачи — `run_id`.
 - Idempotency-Key на `POST` — да.
 - Cancel — нет в A.
+
+---
+
+## Итерация B — Knowledge Gaps (Accepted)
+
+| Включено | Не включено |
+|---|---|
+| Domain `KnowledgeGap` aggregate | AI-assisted authoring |
+| `gap_signals` + idempotent record | Semantic clustering / embeddings |
+| Signals из AnswerRun + negative feedback | LLM classification |
+| Rule-based batch detection + upsert | Search telemetry signals |
+| Editorial API user+service | Отдельные Permission flags |
+| Taskiq detect task (+ optional manual trigger) | Frontend inbox |
+
+**Detection MVP:**
+
+1. Пишем signal при `COMPLETED` + `insufficient_evidence` / `conflicting_evidence` и при thumbs-down feedback.
+2. **Не** пишем signal на `FAILED` / timeout / `ACCESS_CHANGED`.
+3. Группировка: детерминированный `grouping_key` = hash(kind + нормализованный topic_hint).
+4. Один signal уже может создать `NEEDS_TRIAGE` candidate (порог `GAPS_MIN_SIGNALS`, default 1 для пилота).
+5. `MISSING_CONTENT` не назначаем автоматически только по `insufficient_evidence`.
 
 ---
 
@@ -75,4 +100,5 @@ PostgreSQL snapshot — source of truth; Redis Pub/Sub — уведомлени�
 - [x] Privacy: full
 - [x] Source URL формат (сменный)
 - [x] Cheap models / .env для AI Tunnel
-- [x] Gaps — later
+- [x] Gaps — iteration B
+- [x] Gaps auth MVP: admin / space WRITE

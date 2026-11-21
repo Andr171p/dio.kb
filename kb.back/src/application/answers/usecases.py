@@ -204,6 +204,8 @@ async def execute_answer_run(
     config: AnswersConfig,
     notify: NotifyAnswerProgress,
     owner: str,
+    gap_signal_store=None,
+    gaps_config=None,
 ) -> None:
     claimed = await store.claim(run_id, owner=owner, lease_seconds=config.lease_seconds)
     if claimed is None:
@@ -287,6 +289,25 @@ async def execute_answer_run(
         owner=owner,
     )
     await notify(run_id)
+
+    if gap_signal_store is not None and gaps_config is not None:
+        from src.application.knowledge_gaps import usecases as gaps
+
+        article_ids = tuple(source.article_id for source in response.sources)
+        space_id = None
+        if claimed.space_ids and len(claimed.space_ids) == 1:
+            space_id = claimed.space_ids[0]
+
+        await gaps.record_answer_outcome_signal(
+            organization_id=claimed.organization_id,
+            answer_id=run_id,
+            answer_status=response.status.value,
+            question=claimed.question,
+            article_ids=article_ids,
+            space_id=space_id,
+            signal_store=gap_signal_store,
+            config=gaps_config,
+        )
 
 
 async def get_answer(

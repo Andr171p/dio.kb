@@ -6,6 +6,7 @@ from .answers import AnswerFeedbackOrm, AnswerRunOrm
 from .articles import ArticleOrm, ArticleRevisionOrm
 from .collections import CollectionOrm, CollectionPlacementOrm
 from .indexing import EmbeddingOrm, ImageAnalysisOrm, IndexCheckpointOrm
+from .knowledge_gaps import GapSignalOrm, KnowledgeGapOrm, KnowledgeGapSignalOrm
 from .space import SpaceOrm
 
 __all__ = [
@@ -18,8 +19,11 @@ __all__ = [
     "CollectionOrm",
     "CollectionPlacementOrm",
     "EmbeddingOrm",
+    "GapSignalOrm",
     "ImageAnalysisOrm",
     "IndexCheckpointOrm",
+    "KnowledgeGapOrm",
+    "KnowledgeGapSignalOrm",
     "OutboxMessageOrm",
     "SpaceOrm",
 ]

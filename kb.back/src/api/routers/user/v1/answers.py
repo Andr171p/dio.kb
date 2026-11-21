@@ -16,6 +16,7 @@ from src.api.dependencies.answers import (
 from src.api.dependencies.articles import ArticleQueryRepositoryDep
 from src.api.dependencies.auth import CurrentUser
 from src.api.dependencies.db import DBSession, OutboxDep
+from src.api.dependencies.knowledge_gaps import GapsConfigDep, GapSignalStoreDep
 from src.application.answers import feedback as feedback_uc
 from src.application.answers import usecases as answers
 from src.application.answers.config import AnswersConfig
@@ -141,6 +142,8 @@ async def put_feedback(
     auth: CurrentUser,
     run_store: AnswerRunStoreDep,
     feedback_store: AnswerFeedbackStoreDep,
+    gap_signal_store: GapSignalStoreDep,
+    gaps_config: GapsConfigDep,
 ) -> AnswerFeedbackResponse:
     return await feedback_uc.put_answer_feedback(
         auth,
@@ -148,6 +151,8 @@ async def put_feedback(
         dto,
         run_store=run_store,
         feedback_store=feedback_store,
+        gap_signal_store=gap_signal_store,
+        gaps_config=gaps_config,
     )
 
 

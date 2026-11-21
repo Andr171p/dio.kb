@@ -10,12 +10,13 @@ def test_service_routes_are_read_only_except_search() -> None:
     writable_prefixes = (
         "/api/service/v1/search",
         "/api/service/v1/answers",
+        "/api/service/v1/knowledge-gaps",
     )
     for path, operations in paths.items():
         if not path.startswith("/api/service/"):
             continue
         if any(path.startswith(prefix) for prefix in writable_prefixes):
-            assert set(operations) <= {"get", "post", "put"}
+            assert set(operations) <= {"get", "post", "put", "patch"}
         else:
             assert set(operations) <= {"get"}
 
