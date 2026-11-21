@@ -58,11 +58,15 @@ function AnswerPanelView({
       state.connection === 'reconnecting' ? 'reconnecting' : undefined,
   });
 
-  const writeAnswerParam = (nextAnswerId: string | null) => {
+  const writeAnswerParam = (
+    nextAnswerId: string | null,
+    question = trimmed,
+  ) => {
     onAnswerIdChange?.(nextAnswerId);
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
+        if (question) next.set('q', question);
         if (nextAnswerId) next.set('answer', nextAnswerId);
         else next.delete('answer');
         next.delete('ai');
@@ -70,6 +74,15 @@ function AnswerPanelView({
       },
       { replace: true },
     );
+  };
+
+  const askAi = () => {
+    // Сразу синхронизируем q в URL — иначе эффект на SearchPage
+    // сбросит run, пока urlQuery ещё старый.
+    writeAnswerParam(null, trimmed);
+    void startAnswerRun({ question: trimmed, spaceIds }).then((id) => {
+      if (id) writeAnswerParam(id, trimmed);
+    });
   };
 
   const showCta =
@@ -96,11 +109,10 @@ function AnswerPanelView({
         </div>
         <Button
           variant="secondary"
-          onClick={() =>
-            void startAnswerRun({ question: trimmed, spaceIds }).then((id) => {
-              if (id) writeAnswerParam(id);
-            })
-          }
+          // Не даём input потерять фокус до click — blur иначе
+          // коммитит поиск и гоняется со startAnswerRun.
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={askAi}
         >
           Спросить
         </Button>

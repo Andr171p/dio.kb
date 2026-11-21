@@ -108,11 +108,12 @@
 .toggle {
   @include reset-button;
   display: flex;
+  align-items: center;
   justify-content: center;
   width: 100%;
   padding: 12px;
   border-top: 1px solid color-mix(in srgb, var(--color-info) 18%, transparent);
-  font: 600 13px/18px var(--font-ui);
+  font: 600 13px/1 var(--font-ui);
   color: var(--color-info);
 
   &:hover {

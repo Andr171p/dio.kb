@@ -111,10 +111,18 @@ export function SearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Новый поисковый запрос не должен держать старый AnswerRun
+  // Новый поисковый запрос не должен держать старый AnswerRun.
+  // starting/running не трогаем: q в URL может отстать на тик от askAi.
   useEffect(() => {
     const q = urlQuery.trim();
-    if (!q || answerPhase === 'idle' || answerPhase === 'starting') return;
+    if (
+      !q ||
+      answerPhase === 'idle' ||
+      answerPhase === 'starting' ||
+      answerPhase === 'running'
+    ) {
+      return;
+    }
     if (!answerQuestion) return;
     if (q === answerQuestion.trim()) return;
     resetAnswerRun();
