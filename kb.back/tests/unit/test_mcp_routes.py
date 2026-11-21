@@ -23,12 +23,22 @@ from src.domain.spaces.models import Space
 from src.main import app
 
 
+_REPOSITORY_IMPL = {
+    "get_grant_repository": "SqlAlchemyAccessGrantRepository",
+    "get_article_repository": "SqlAlchemyArticleRepository",
+    "get_revision_repository": "SqlAlchemyArticleRevisionRepository",
+    "get_article_query_repository": "SqlAlchemyArticleQueryRepository",
+    "get_space_repository": "SqlAlchemySpaceRepository",
+}
+
+
 def _mock_repository(monkeypatch, name, repository):
     def resolve(session):
         session.append(name)
         return repository
 
-    monkeypatch.setattr(dependencies, name, resolve)
+    # Resolve() binds factories at import; patch the infra class they look up at call time.
+    monkeypatch.setattr(dependencies, _REPOSITORY_IMPL[name], resolve)
 
 
 def _mock_knowledge(monkeypatch):

@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from ddf.infra.cache import InMemoryCache
 from fastapi import FastAPI
-from starlette.applications import Starlette
+from mcp.server import MCPServer
 
 from src.api.dependencies.auth import iam_client
 from src.api.dependencies.db import engine
@@ -14,14 +14,15 @@ from src.infra.broker.broker import broker
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI, *, mcp_http_app: Starlette) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI, *, mcp: MCPServer) -> AsyncIterator[None]:
     # noinspection PyUnresolvedReferences
     app.state.iam_client = iam_client
     # noinspection PyUnresolvedReferences
     app.state.auth_cache = InMemoryCache[Auth]()
     await broker.startup()
     try:
-        async with mcp_http_app.router.lifespan_context(mcp_http_app):
+        # Mounted Starlette apps do not run their own lifespan; enter the session manager here.
+        async with mcp.session_manager.run():
             yield
     finally:
         await link_preview_fetcher.close()

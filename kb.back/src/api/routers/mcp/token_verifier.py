@@ -20,7 +20,7 @@ class IamTokenVerifier:
                 options={"verify_signature": False, "verify_aud": True, "verify_exp": True, "require": ["exp"]},
             )
             expires_at = int(claims["exp"])
-        except InvalidTokenError, TypeError, OverflowError:
+        except (InvalidTokenError, TypeError, OverflowError):
             return None
 
         try:
