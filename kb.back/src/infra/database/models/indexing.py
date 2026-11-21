@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from ddf.infra.database.sqlalchemy import Base
-from sqlalchemy import ARRAY, DateTime, Float, ForeignKey, String, Text, func
+from sqlalchemy import ARRAY, REAL, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -21,7 +21,8 @@ class EmbeddingOrm(Base):
 
     content_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     version: Mapped[str] = mapped_column(String(255), primary_key=True)
-    vector: Mapped[list[float]] = mapped_column(ARRAY(Float))
+    vector: Mapped[list[float]] = mapped_column(ARRAY(REAL), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class IndexCheckpointOrm(Base):

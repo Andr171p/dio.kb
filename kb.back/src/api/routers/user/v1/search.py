@@ -4,7 +4,7 @@ from src.api.dependencies.access import GrantRepositoryDep
 from src.api.dependencies.articles import ArticleQueryRepositoryDep
 from src.api.dependencies.auth import CurrentUser
 from src.api.dependencies.search import SuggestionIndexDep, search_index, text_embedder
-from src.application.search import usecases
+from src.application.search import usecases as search
 from src.application.search.dtos import SearchRequest, SearchResponse, SuggestionRequest, SuggestionsResponse
 
 router = APIRouter(prefix="/search", tags=["Search"])
@@ -17,7 +17,7 @@ async def search_articles(
     grant_repository: GrantRepositoryDep,
     article_query_repository: ArticleQueryRepositoryDep,
 ) -> SearchResponse:
-    return await usecases.search_articles(
+    return await search.search_articles(
         auth.user.organization_id,
         auth,
         dto,
@@ -36,7 +36,7 @@ async def suggest_articles(
     article_query_repository: ArticleQueryRepositoryDep,
     suggestion_index: SuggestionIndexDep,
 ) -> SuggestionsResponse:
-    return await usecases.suggest_articles(
+    return await search.suggest_articles(
         auth.user.organization_id,
         auth,
         dto,

@@ -1,12 +1,9 @@
 """Taskiq-брокер (RabbitMQ): общий для отправки задач (API, relay) и их выполнения (worker)."""
 
-from dotenv import load_dotenv
 from taskiq.middlewares import SmartRetryMiddleware
 from taskiq_aio_pika import AioPikaBroker
 
 from .config import RabbitConfig
-
-load_dotenv()
 
 rabbit_config = RabbitConfig()
 

@@ -6,7 +6,7 @@ from src.api.dependencies.access import GrantRepositoryDep
 from src.api.dependencies.articles import ArticleRepositoryDep, RevisionRepositoryDep
 from src.api.dependencies.auth import CurrentUser
 from src.api.dependencies.db import DBSession, OutboxDep
-from src.application.articles import usecases
+from src.application.articles import usecases as articles
 from src.application.articles.dtos import (
     ArticleDetailResponse,
     ArticleResponse,
@@ -32,7 +32,7 @@ async def get_published_article(
     revision_repository: RevisionRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> ArticleDetailResponse:
-    return await usecases.get_published_article(
+    return await articles.get_published_article(
         article_id,
         auth,
         article_repository=article_repository,
@@ -53,7 +53,7 @@ async def get_article_draft(
     revision_repository: RevisionRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> ArticleDetailResponse:
-    return await usecases.get_article_draft(
+    return await articles.get_article_draft(
         article_id,
         auth,
         article_repository=article_repository,
@@ -76,7 +76,7 @@ async def revise_article(
     grant_repository: GrantRepositoryDep,
     db: DBSession,
 ) -> ArticleDetailResponse:
-    return await usecases.revise_article(
+    return await articles.revise_article(
         article_id,
         dto,
         auth,
@@ -99,7 +99,7 @@ async def list_article_revisions(
     revision_repository: RevisionRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> list[ArticleRevisionSummaryResponse]:
-    return await usecases.list_article_revisions(
+    return await articles.list_article_revisions(
         article_id,
         auth,
         article_repository=article_repository,
@@ -121,7 +121,7 @@ async def get_article_revision(
     revision_repository: RevisionRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> ArticleRevisionResponse:
-    return await usecases.get_article_revision(
+    return await articles.get_article_revision(
         article_id,
         revision_id,
         auth,
@@ -146,7 +146,7 @@ async def restore_article_revision(
     grant_repository: GrantRepositoryDep,
     db: DBSession,
 ) -> ArticleDetailResponse:
-    return await usecases.restore_article_revision(
+    return await articles.restore_article_revision(
         article_id,
         revision_id,
         dto,
@@ -172,7 +172,7 @@ async def publish_article(
     outbox: OutboxDep,
     db: DBSession,
 ) -> ArticleResponse:
-    return await usecases.publish_article(
+    return await articles.publish_article(
         article_id,
         dto,
         auth,
@@ -196,7 +196,7 @@ async def unpublish_article(
     outbox: OutboxDep,
     db: DBSession,
 ) -> ArticleResponse:
-    return await usecases.unpublish_article(
+    return await articles.unpublish_article(
         article_id,
         auth,
         article_repository=article_repository,
@@ -215,7 +215,7 @@ async def archive_article(
     outbox: OutboxDep,
     db: DBSession,
 ) -> None:
-    await usecases.archive_article(
+    await articles.archive_article(
         article_id,
         auth,
         article_repository=article_repository,
@@ -237,7 +237,7 @@ async def restore_article(
     grant_repository: GrantRepositoryDep,
     db: DBSession,
 ) -> ArticleResponse:
-    return await usecases.restore_article(
+    return await articles.restore_article(
         article_id,
         auth,
         article_repository=article_repository,

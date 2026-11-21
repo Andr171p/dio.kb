@@ -5,7 +5,7 @@ from fastapi import Depends
 from src.api.dependencies.db import DBSession
 from src.application.search.indexes import SuggestionIndex
 from src.infra.aitunnel import AiTunnelConfig, AiTunnelTextEmbedder
-from src.infra.database.repositories.suggestions import SqlAlchemySuggestionIndex
+from src.infra.database.search import SqlAlchemySuggestionIndex
 from src.infra.qdrant import QdrantConfig, QdrantSearchIndex
 
 aitunnel_config = AiTunnelConfig()  # type: ignore[call-arg]

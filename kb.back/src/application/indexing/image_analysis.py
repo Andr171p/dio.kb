@@ -78,7 +78,7 @@ async def analyze_images(
     if not ids:
         return {}, ()
 
-    version = config.analysis_version or analyzer_version
+    version = config.analyzer_version or analyzer_version
     analyses = await cache.get_many(ids, version)
     missing = (media_id for media_id in ids if media_id not in analyses)
 

@@ -6,21 +6,13 @@ from ddf.application.outbox import OutboxStore
 from ddf.infra.database.sqlalchemy import PostgresConfig
 from ddf.infra.outbox.sqlalchemy import SqlAlchemyOutboxStore
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.infra.database.connection import create_database
 from src.infra.outbox import OUTBOX_CHANNEL
 
-config = PostgresConfig()
-
-engine = create_async_engine(
-    config.uri,
-    pool_size=config.pool_resize,
-    max_overflow=config.max_overflow,
-    pool_timeout=config.pool_timeout,
-    pool_pre_ping=True,
-    echo=config.echo,
-)
-sessionmaker = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
+pg_config = PostgresConfig()
+engine, sessionmaker = create_database(pg_config)
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:

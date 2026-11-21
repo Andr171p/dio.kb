@@ -2,9 +2,9 @@ from fastapi import APIRouter, status
 
 from src.api.dependencies.access import GrantRepositoryDep
 from src.api.dependencies.auth import CurrentAdmin
-from src.api.dependencies.db import UnitOfWorkDep
+from src.api.dependencies.db import DBSession
 from src.api.dependencies.spaces import SpaceRepositoryDep
-from src.application.spaces import usecases
+from src.application.spaces import usecases as spaces
 from src.application.spaces.dtos import CreateSpaceDTO, SpaceResponse
 
 router = APIRouter(prefix="/spaces", tags=["Spaces"])
@@ -16,9 +16,9 @@ async def create_space(
     auth: CurrentAdmin,
     space_repository: SpaceRepositoryDep,
     grant_repository: GrantRepositoryDep,
-    uow: UnitOfWorkDep,
+    uow: DBSession,
 ) -> SpaceResponse:
-    return await usecases.create_space(
+    return await spaces.create_space(
         dto,
         auth,
         space_repository=space_repository,

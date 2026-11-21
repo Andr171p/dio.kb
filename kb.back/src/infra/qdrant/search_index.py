@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from http import HTTPStatus
+from itertools import batched
 from uuid import UUID
 
 from qdrant_client import AsyncQdrantClient, models
@@ -148,10 +149,10 @@ class QdrantSearchIndex:
         ):
             raise ValueError("Invalid chunks for article revision")
 
-        for start in range(0, len(chunks), self._write_batch_size):
+        for batch in batched(chunks, self._write_batch_size, strict=False):
             await self._client.upsert(
                 self._collection,
-                points=[self._to_point(c) for c in chunks[start : start + self._write_batch_size]],
+                points=[self._to_point(chunk) for chunk in batch],
                 wait=True,
             )
 

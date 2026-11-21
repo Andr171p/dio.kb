@@ -15,11 +15,12 @@ from src.domain.articles.logic import create_article_with_first_revision
 from src.infra.database.models import AccessGrantOrm, ArticleOrm, SpaceOrm
 from src.infra.database.repositories.article import ArticleMapper
 from src.infra.database.repositories.article_query import SqlAlchemyArticleQueryRepository
-from src.infra.database.repositories.indexing import (
-    SqlAlchemyEmbeddingCache,
-    SqlAlchemyImageAnalysisCache,
-    SqlAlchemyIndexingRepository,
-)
+from src.infra.database.indexing.embedding_cache import SqlAlchemyEmbeddingCache
+from src.infra.database.indexing.image_analysis_cache import SqlAlchemyImageAnalysisCache
+from src.infra.database.indexing.checkpoints import SqlAlchemyIndexCheckpointStore
+from src.infra.database.indexing.locks import lock_article
+from src.infra.database.repositories.publication import load_publication
+from src.infra.database.repositories.reconciliation import find_candidates
 from src.infra.database.repositories.revision import ArticleRevisionMapper
 
 
@@ -51,12 +52,14 @@ async def test_postgres_indexing_and_readable_publications():
                 permissions=int(Permission.READ),
             )
         )
-    repository = SqlAlchemyIndexingRepository(sessions)
+    repository = SqlAlchemyIndexCheckpointStore(sessions)
     checkpoints = IndexCheckpoint(article.id, revision.id, space, "g1", datetime.now(UTC))
-    assert (await repository.load_publication(org, article.id))[1].id == revision.id
+    async with lock_article(org, article.id, sessionmaker=sessions):
+        assert await load_publication(org, article.id, sessionmaker=sessions) is not None
+    assert (await load_publication(org, article.id, sessionmaker=sessions))[1].id == revision.id
     assert await repository.save_if_current(org, checkpoints)
     assert await repository.get(article.id, "g1") == checkpoints
-    assert await repository.find_candidates(ReconciliationQuery(org, "g1", "stale")) == ()
+    assert await find_candidates(ReconciliationQuery(org, "g1", "stale"), sessionmaker=sessions) == ()
     async with sessions() as session:
         queries = SqlAlchemyArticleQueryRepository(session)
         assert (
@@ -74,7 +77,7 @@ async def test_postgres_indexing_and_readable_publications():
     async with sessions() as session, session.begin():
         await session.execute(update(ArticleOrm).where(ArticleOrm.id == article.id).values(published_revision_id=None))
     assert not await repository.save_if_current(org, checkpoints)
-    assert await repository.find_candidates(ReconciliationQuery(org, "g1", "stale")) == (article.id,)
+    assert await find_candidates(ReconciliationQuery(org, "g1", "stale"), sessionmaker=sessions) == (article.id,)
     assert not await repository.clear_if_unpublished(uuid4(), article.id, "g1")
     assert await repository.clear_if_unpublished(org, article.id, "g1")
     await engine.dispose()

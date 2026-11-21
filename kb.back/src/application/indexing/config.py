@@ -19,7 +19,7 @@ class ImageProcessingConfig(BaseSettings):
         description="Максимум параллельных vision-запросов при обработке одной статьи",
     )
     analysis_timeout: PositiveFloat = Field(default=60.0, description="Таймаут одного анализа изображения в секундах")
-    analysis_version: str | None = Field(
+    analyzer_version: str | None = Field(
         default=None,
         description="Версия полного алгоритма анализа: модель, промпт и preprocessing",
         examples=["vision-v2-prompt-v3"],

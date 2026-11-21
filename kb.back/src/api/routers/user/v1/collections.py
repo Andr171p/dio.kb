@@ -7,7 +7,7 @@ from src.api.dependencies.articles import ArticleRepositoryDep
 from src.api.dependencies.auth import CurrentUser
 from src.api.dependencies.collections import CollectionRepositoryDep, PlacementRepositoryDep
 from src.api.dependencies.db import DBSession
-from src.application.collections import usecases
+from src.application.collections import usecases as collections
 from src.application.collections.dtos import (
     CollectionPlacementResponse,
     CollectionResponse,
@@ -18,7 +18,7 @@ from src.application.collections.dtos import (
 router = APIRouter(prefix="/collections", tags=["Collections"])
 
 
-@router.get("/{collection_id}", summary="Получить коллекцию")
+@router.get("/{collection_id}", summary="Получить коллекцию", status_code=status.HTTP_200_OK)
 async def get_collection(
     collection_id: UUID,
     auth: CurrentUser,
@@ -26,7 +26,7 @@ async def get_collection(
     placement_repository: PlacementRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> CollectionResponse:
-    return await usecases.get_collection(
+    return await collections.get_collection(
         collection_id,
         auth,
         collection_repository=collection_repository,
@@ -35,7 +35,7 @@ async def get_collection(
     )
 
 
-@router.patch("/{collection_id}", summary="Обновить коллекцию")
+@router.patch("/{collection_id}", summary="Обновить коллекцию", status_code=status.HTTP_200_OK)
 async def update_collection(
     collection_id: UUID,
     dto: UpdateCollectionDTO,
@@ -45,7 +45,7 @@ async def update_collection(
     grant_repository: GrantRepositoryDep,
     uow: DBSession,
 ) -> CollectionResponse:
-    return await usecases.update_collection(
+    return await collections.update_collection(
         collection_id,
         dto,
         auth,
@@ -69,7 +69,7 @@ async def archive_collection(
     grant_repository: GrantRepositoryDep,
     uow: DBSession,
 ) -> None:
-    await usecases.archive_collection(
+    await collections.archive_collection(
         collection_id,
         auth,
         collection_repository=collection_repository,
@@ -79,7 +79,7 @@ async def archive_collection(
     )
 
 
-@router.get("/{collection_id}/placements", summary="Элементы коллекции по порядку")
+@router.get("/{collection_id}/placements", summary="Элементы коллекции по порядку", status_code=status.HTTP_200_OK)
 async def list_collection_placements(
     collection_id: UUID,
     auth: CurrentUser,
@@ -87,7 +87,7 @@ async def list_collection_placements(
     placement_repository: PlacementRepositoryDep,
     grant_repository: GrantRepositoryDep,
 ) -> list[CollectionPlacementResponse]:
-    return await usecases.list_collection_placements(
+    return await collections.list_collection_placements(
         collection_id,
         auth,
         collection_repository=collection_repository,
@@ -111,7 +111,7 @@ async def create_collection_placement(
     grant_repository: GrantRepositoryDep,
     uow: DBSession,
 ) -> CollectionPlacementResponse:
-    return await usecases.create_collection_placement(
+    return await collections.create_collection_placement(
         collection_id,
         dto,
         auth,

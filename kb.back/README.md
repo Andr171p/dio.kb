@@ -20,7 +20,7 @@ uv run alembic upgrade head
 
 ```bash
 uv run uvicorn src.main:app --port 8010                               # API, Swagger: http://localhost:8010/docs
-uv run taskiq worker src.infra.broker.tasks:broker                    # индексация статей
+uv run taskiq worker src.infra.broker.worker:broker                   # индексация статей
 uv run python -m src.infra.outbox.relay                               # outbox → очередь индексации
 ```
 

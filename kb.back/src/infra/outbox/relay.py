@@ -14,30 +14,20 @@ from ddf.domain.events import Event
 from ddf.infra.database.sqlalchemy import PostgresConfig
 from ddf.infra.outbox.sqlalchemy import PostgresOutboxListener, SqlAlchemyOutboxStore, run_postgres_notify_worker
 from ddf.infra.outbox.worker import OutboxWorkerConfig
-from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from src.application.indexing.commands import IndexArticle
 from src.domain.articles.events import ArticleArchived, ArticlePublished, ArticleUnpublished
 from src.infra.broker.broker import broker
 from src.infra.broker.enqueue import enqueue_index_command
+from src.infra.database.connection import create_database
 from src.infra.outbox import OUTBOX_CHANNEL
 
 logger = logging.getLogger(__name__)
 
 
 async def run_outbox_relay() -> None:
-    config = PostgresConfig()
-
-    engine = create_async_engine(
-        config.uri,
-        pool_size=config.pool_resize,
-        max_overflow=config.max_overflow,
-        pool_timeout=config.pool_timeout,
-        pool_pre_ping=True,
-        echo=config.echo,
-    )
-    sessionmaker = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
+    pg_config = PostgresConfig()
+    engine, sessionmaker = create_database(pg_config)
 
     async def publish(events: Sequence[Event]) -> None:
         for event in events:
@@ -70,6 +60,5 @@ async def run_outbox_relay() -> None:
 
 
 if __name__ == "__main__":
-    load_dotenv()
     logging.basicConfig(level=logging.INFO)
     asyncio.run(run_outbox_relay())

@@ -9,20 +9,19 @@ from src.infra.broker.broker import broker
 
 @broker.task(task_name="indexing.index_article", retry_on_error=True)
 async def index_article_task(
-    organization_id: str,
-    article_id: str,
+    organization_id: UUID,
+    article_id: UUID,
     force: bool = False,
     state: TaskiqState = TaskiqDepends(),  # noqa: B008
 ) -> None:
-    repository = state.repository
     outcome = await index_article(
-        UUID(organization_id),
-        UUID(article_id),
-        load_publication=repository.load_publication,
+        organization_id,
+        article_id,
+        load_publication=state.load_publication,
         prepare_chunks=state.prepare,
-        lock_article=repository.lock_article,
-        index_writer=state.index,
-        checkpoint_store=repository,
+        lock_article=state.lock_article,
+        index_writer=state.search_index,
+        checkpoint_store=state.checkpoint_store,
         force=force,
     )
     if outcome == IndexOutcome.SUPERSEDED:

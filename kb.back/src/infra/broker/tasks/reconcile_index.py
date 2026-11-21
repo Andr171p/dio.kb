@@ -6,10 +6,9 @@ from src.infra.broker.broker import broker
 
 
 @broker.task(task_name="indexing.reconcile_index", retry_on_error=True)
-async def reconcile_index_task(command: dict, state: TaskiqState = TaskiqDepends()) -> None:  # noqa: B008
+async def reconcile_index_task(command: ReconcileIndex, state: TaskiqState = TaskiqDepends()) -> None:  # noqa: B008
     from src.infra.broker.enqueue import enqueue_index_command
 
-    request = ReconcileIndex.model_validate(command)
-    if request.generation != state.index.generation:
+    if command.generation != state.index.generation:
         raise ValueError("Reconciliation generation does not match worker index")
-    await reconcile_index(request, find_candidates=state.repository.find_candidates, enqueue=enqueue_index_command)
+    await reconcile_index(command, find_candidates=state.find_candidates, enqueue=enqueue_index_command)

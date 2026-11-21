@@ -7,11 +7,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from ddf.infra.database.sqlalchemy import PostgresConfig
-from dotenv import load_dotenv
 
-load_dotenv()
 
-from src.infra.database.models import Base  # noqa: E402
+from src.infra.database.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

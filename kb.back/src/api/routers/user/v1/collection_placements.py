@@ -13,7 +13,7 @@ from src.application.collections.dtos import CollectionPlacementResponse, MovePl
 router = APIRouter(prefix="/collection-placements", tags=["Collection Placements"])
 
 
-@router.patch("/placements/{placement_id}", summary="Переместить элемент")
+@router.patch("/placements/{placement_id}", summary="Переместить элемент", status_code=status.HTTP_200_OK)
 async def move_collection_placement(
     placement_id: UUID,
     dto: MovePlacementDTO,
