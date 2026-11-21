@@ -31,6 +31,8 @@ uv run ruff check src tests migrations
 uv run pytest
 ```
 
+Интеграционные тесты PostgreSQL и Qdrant запускаются при заданных `TEST_DATABASE_URL` (asyncpg URL базы с применёнными миграциями) и `TEST_QDRANT_URL` соответственно. Используйте отдельные тестовые инстансы.
+
 ## Быстрый сценарий
 
 1. Получить токен DIOS: `POST http://localhost:8001/api/v1/auth/login` (`admin@admin.com` / `admin`).
@@ -46,4 +48,8 @@ Worker получает команды через outbox и Taskiq; состоя
 
 Service API предоставляет поиск, превью ссылок и чтение опубликованных статей, пространств и коллекций под `/api/service/v1`. Пока Legacy IAM не поддерживает делегированную identity сервиса, эти маршруты требуют проверенную учётную запись администратора и применяют её обычные ACL; доступ от имени произвольного пользователя не поддерживается.
 
-Интеграционные тесты PostgreSQL и Qdrant запускаются при заданных `TEST_DATABASE_URL` (asyncpg URL базы с применёнными миграциями) и `TEST_QDRANT_URL` соответственно. Используйте отдельные тестовые инстансы.
+## MCP
+
+Streamable HTTP доступен по `/api/mcp/`. `search_knowledge` ищет доступные опубликованные статьи, `get_article` возвращает их Markdown, `get_spaces` перечисляет пространства с правом `READ`.
+
+Передавайте пользовательский JWT DIOS в `Authorization: Bearer …`. IAM должен подтвердить токен, его `aud` должен содержать `MCP_RESOURCE_URL`, а срок `exp` должен быть действующим. По умолчанию `MCP_RESOURCE_URL=https://kb.dios.cloud/api/mcp` и `MCP_ISSUER_URL=https://iam.dios.cloud`. При локальном запуске задайте `MCP_RESOURCE_URL=http://localhost:8010/api/mcp` и запросите токен с этим `aud`.

@@ -49,7 +49,6 @@
 Реализация зависит от PostgreSQL и расширения pg_trgm.
 """
 
-
 from collections.abc import Collection, Sequence
 from uuid import UUID
 

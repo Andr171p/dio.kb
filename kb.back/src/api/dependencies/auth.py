@@ -19,7 +19,7 @@ iam_config = SrvIamConfig()  # type: ignore[call-arg]
 iam_client = SrvIamClient(iam_config)
 
 
-async def authenticate(token: str, *, iam_client: SrvIamClient, cache: InMemoryCache[Auth]) -> Auth:
+async def authenticate(token: str, *, cache: InMemoryCache[Auth]) -> Auth:
     """Аутентифицирует access токен DIOS (с кэшем), общая точка для HTTP и MCP."""
 
     cache_key = f"iam:auth:{hashlib.sha256(token.encode()).hexdigest()}"
@@ -39,11 +39,7 @@ async def get_current_auth(
     if credentials is None or not credentials.credentials:
         raise UnauthorizedError("Missing or invalid credentials.")
 
-    return await authenticate(
-        credentials.credentials,
-        iam_client=request.app.state.iam_client,
-        cache=request.app.state.auth_cache,
-    )
+    return await authenticate(credentials.credentials, cache=request.app.state.auth_cache)
 
 
 CurrentAuth = Annotated[Auth, Depends(get_current_auth)]
@@ -69,7 +65,7 @@ def get_current_admin(user: CurrentUser) -> AuthUser:
 CurrentAdmin = Annotated[AuthUser, Depends(get_current_admin)]
 
 
-def get_current_service(auth: CurrentAuth) -> Auth:
+def get_current_client(auth: CurrentAuth) -> Auth:
     # Legacy: сервисных аккаунтов пока нет, service-to-service ходим под админом DIOS
     is_legacy_admin = auth.user is not None and AuthUser.model_validate(auth, from_attributes=True).is_admin
     if auth.type not in {AuthType.CLIENT, AuthType.ADMIN} and not is_legacy_admin:
@@ -78,7 +74,7 @@ def get_current_service(auth: CurrentAuth) -> Auth:
     return auth
 
 
-CurrentService = Annotated[Auth, Depends(get_current_service)]
+CurrentClient = Annotated[Auth, Depends(get_current_client)]
 
 
 def require_auth_type(*required_types: AuthType) -> Callable[[Auth], Auth]:
@@ -94,15 +90,17 @@ def require_auth_type(*required_types: AuthType) -> Callable[[Auth], Auth]:
 require_auth_user = Security(require_auth_type(AuthType.USER))
 
 # Legacy: сервисных аккаунтов пока нет, service-to-service ходим под админом
-require_auth_service = Security(require_auth_type(AuthType.CLIENT, AuthType.ADMIN))
+require_auth_client = Security(require_auth_type(AuthType.CLIENT, AuthType.ADMIN))
 
 __all__ = [
     "CurrentAdmin",
     "CurrentAuth",
-    "CurrentService",
+    "CurrentClient",
     "CurrentUser",
     "authenticate",
+    "get_current_client",
+    "get_current_user",
     "iam_client",
-    "require_auth_service",
+    "require_auth_client",
     "require_auth_user",
 ]
