@@ -1,11 +1,10 @@
 import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import {
   answerPlainText,
   AnswerContent,
   progressLabel,
-  type AnswerSource,
 } from '@entities/answer';
 import { AnswerFeedback } from '@features/answer-feedback';
 import {
@@ -14,7 +13,6 @@ import {
   startAnswerRun,
   useAnswerRun,
 } from '@features/answer-generation';
-import { routes } from '@shared/config/routes';
 import { useMediaQuery } from '@shared/lib/hooks';
 import { Button } from '@shared/ui/button';
 import { KnowledgeMark } from '@shared/ui/logo';
@@ -43,12 +41,14 @@ function AnswerPanelView({
   const state = useAnswerRun();
   const compact = useMediaQuery('(max-width: 900px)');
   const [expanded, setExpanded] = useState(false);
-  const [preview, setPreview] = useState<AnswerSource | null>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [, setParams] = useSearchParams();
 
   const trimmed = query.trim();
   const canAsk = trimmed.length >= 2;
+  const matchesCurrentAnswer =
+    Boolean(state.question) && state.question!.trim() === trimmed;
+
   const label = progressLabel({
     status: state.progress?.status ?? 'queued',
     stage: state.progress?.stage ?? null,
@@ -72,8 +72,16 @@ function AnswerPanelView({
     );
   };
 
-  if (state.phase === 'idle') {
-    if (!canAsk) return null;
+  const showCta =
+    canAsk &&
+    (state.phase === 'idle' ||
+      ((state.phase === 'ready' ||
+        state.phase === 'failed' ||
+        state.phase === 'cancelled' ||
+        state.phase === 'access_denied') &&
+        !matchesCurrentAnswer));
+
+  if (showCta) {
     return (
       <section className={styles.cta} aria-label="Ответ от ИИ">
         <div className={styles.ctaText}>
@@ -100,7 +108,10 @@ function AnswerPanelView({
     );
   }
 
-  if (state.phase === 'starting' || state.phase === 'running') {
+  if (
+    (state.phase === 'starting' || state.phase === 'running') &&
+    matchesCurrentAnswer
+  ) {
     return (
       <section className={styles.progressWrap} aria-live="polite" aria-busy>
         <div
@@ -115,9 +126,10 @@ function AnswerPanelView({
   }
 
   if (
-    state.phase === 'failed' ||
-    state.phase === 'cancelled' ||
-    state.phase === 'access_denied'
+    (state.phase === 'failed' ||
+      state.phase === 'cancelled' ||
+      state.phase === 'access_denied') &&
+    matchesCurrentAnswer
   ) {
     return (
       <section className={styles.error} role="alert">
@@ -158,6 +170,8 @@ function AnswerPanelView({
     );
   }
 
+  if (state.phase !== 'ready' || !matchesCurrentAnswer) return null;
+
   const response = state.run?.response;
   if (!response) return null;
 
@@ -185,10 +199,6 @@ function AnswerPanelView({
             <AnswerContent
               blocks={response.blocks}
               sources={response.sources}
-              onPreviewSource={(source) => {
-                setPreview(source);
-                if (compact) setSourcesOpen(true);
-              }}
             />
           </div>
 
@@ -227,28 +237,7 @@ function AnswerPanelView({
 
         {(!compact || sourcesOpen) && (
           <div className={styles.side}>
-            <AnswerSources
-              sources={response.sources}
-              activeId={preview?.id}
-              onSelect={setPreview}
-            />
-            {preview && (
-              <div className={styles.preview}>
-                <p className={styles.previewTitle}>{preview.title}</p>
-                <div className={styles.previewExcerpt}>
-                  <AnswerContent
-                    blocks={[{ markdown: preview.excerpt, citations: [] }]}
-                    sources={[]}
-                  />
-                </div>
-                <Link
-                  className={styles.previewLink}
-                  to={routes.article(preview.articleId, preview.anchor)}
-                >
-                  Открыть раздел статьи
-                </Link>
-              </div>
-            )}
+            <AnswerSources sources={response.sources} />
           </div>
         )}
       </div>

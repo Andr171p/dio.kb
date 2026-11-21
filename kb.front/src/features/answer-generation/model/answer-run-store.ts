@@ -11,9 +11,18 @@ import {
 import { ApiError, describeError, isAbortError } from '@shared/api';
 import { registerStoreReset } from '@shared/lib/store-reset';
 import {
+  clearAnswerPointer,
+  persistAnswerPointer,
+} from './answer-persistence';
+import {
   subscribeAnswerEvents,
   type SseConnectionState,
 } from './sse-transport';
+export {
+  clearAnswerPointer,
+  persistAnswerPointer,
+  readAnswerPointer,
+} from './answer-persistence';
 
 type Phase =
   | 'idle'
@@ -57,6 +66,7 @@ export const useAnswerRun = create<AnswerRunState>()(() => ({ ...initial }));
 
 registerStoreReset(() => {
   stopStream();
+  clearAnswerPointer();
   useAnswerRun.setState({ ...initial });
 });
 
@@ -197,6 +207,7 @@ async function finalize(answerId: string, status: AnswerRun['status']) {
       connection: 'closed',
       error: status === 'failed' ? run.errorCode ?? 'Не удалось сформировать ответ' : null,
     });
+    if (run.question) persistAnswerPointer(answerId, run.question);
   } catch (error) {
     if (isAbortError(error) || activeAnswerId !== answerId) return;
     useAnswerRun.setState({
@@ -212,6 +223,7 @@ async function finalize(answerId: string, status: AnswerRun['status']) {
 /** Сброс панели без создания нового run. */
 export function resetAnswerRun() {
   stopStream();
+  clearAnswerPointer();
   useAnswerRun.setState({ ...initial });
 }
 
@@ -238,6 +250,7 @@ export async function startAnswerRun(input: CreateAnswerInput): Promise<string |
       spaceIds: input.spaceIds,
     });
     activeAnswerId = accepted.id;
+    persistAnswerPointer(accepted.id, question);
     useAnswerRun.setState({
       phase: 'running',
       answerId: accepted.id,
@@ -307,6 +320,7 @@ export async function restoreAnswerRun(answerId: string) {
       },
       error: run.status === 'failed' ? run.errorCode : null,
     });
+    if (run.question) persistAnswerPointer(answerId, run.question);
 
     if (!isTerminalStatus(run.status)) void openStream(answerId, run.stageSequence);
     else activeAnswerId = null;

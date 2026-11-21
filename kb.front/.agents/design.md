@@ -19,4 +19,4 @@
 
 ## Типографика
 
- - Шрифт: JetBrains Mono
+ - Шрифт UI: Onest; текст статей: Inter

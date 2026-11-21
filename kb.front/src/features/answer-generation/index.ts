@@ -1,6 +1,9 @@
 export {
+  clearAnswerPointer,
   consumeAnswerAutoStart,
   markAnswerAutoStart,
+  persistAnswerPointer,
+  readAnswerPointer,
   resetAnswerRun,
   restoreAnswerRun,
   retryAnswerRun,

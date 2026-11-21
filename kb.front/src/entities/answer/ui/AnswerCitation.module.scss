@@ -1,26 +1,41 @@
 @use '@shared/styles/mixins' as *;
 
+/* Перебиваем prose a { color: accent } — цитаты не должны быть красными */
 .citation {
-  @include reset-button;
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  margin: 0 2px;
-  border-radius: 999px;
-  background: var(--color-info-soft);
-  color: var(--color-info);
-  vertical-align: middle;
-  text-decoration: none;
+  gap: 4px;
+  max-width: 200px;
+  margin: 0 3px;
+  padding: 1px 8px 1px 5px;
+  border-radius: var(--radius-round);
+  background: var(--color-info-soft) !important;
+  color: var(--color-info) !important;
+  vertical-align: baseline;
+  text-decoration: none !important;
+  font: 500 12px/18px var(--font-ui);
 
   &:hover {
-    filter: brightness(0.96);
+    filter: brightness(0.97);
+    text-decoration: none !important;
+    color: var(--color-info) !important;
   }
 
   &:focus-visible {
     @include focus-ring(1px);
   }
+
+  svg {
+    flex: none;
+    color: var(--color-info);
+  }
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
 }
 
 .unknown {

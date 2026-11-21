@@ -1,18 +1,32 @@
 @use '@shared/styles/mixins' as *;
 
-.panel {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-card);
-  background: var(--color-info-soft);
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .header {
-  margin-bottom: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font: var(--text-subtitle);
   color: var(--color-text);
+
+  svg {
+    color: var(--color-info);
+  }
+}
+
+.panel {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--color-info-soft);
 }
 
 .empty {
+  margin: 0;
+  padding: var(--space-4);
   font: var(--text-caption);
   color: var(--color-text-tertiary);
 }
@@ -23,22 +37,29 @@
   list-style: none;
 }
 
-.item,
-.itemActive {
+.row {
+  & + & {
+    border-top: 1px solid color-mix(in srgb, var(--color-info) 18%, transparent);
+  }
+}
+
+.item {
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-3) 0;
+  padding: 12px 14px;
   color: inherit;
   text-decoration: none;
-
-  & + & {
-    border-top: 1px solid color-mix(in srgb, var(--color-info) 16%, transparent);
-  }
+  border-radius: 0;
+  outline: none;
 
   img {
     flex: none;
     margin-top: 2px;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-info) 8%, transparent);
   }
 
   &:hover .title {
@@ -46,13 +67,8 @@
   }
 
   &:focus-visible {
-    @include focus-ring(1px);
-    border-radius: var(--radius-sm);
+    box-shadow: inset 0 0 0 1px var(--color-text);
   }
-}
-
-.itemActive .title {
-  color: var(--color-info);
 }
 
 .body {
@@ -94,13 +110,13 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-top: var(--space-2);
-  padding: var(--space-2) 0;
+  padding: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--color-info) 18%, transparent);
   font: 600 13px/18px var(--font-ui);
   color: var(--color-info);
 
   &:hover {
-    text-decoration: underline;
+    background: color-mix(in srgb, var(--color-info) 8%, transparent);
   }
 
   &:focus-visible {

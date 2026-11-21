@@ -1,5 +1,5 @@
 import '@fontsource-variable/inter';
-import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/onest/index.css';
 import './styles/index.scss';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

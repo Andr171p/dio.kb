@@ -6,6 +6,7 @@ import { useSuggestions } from '@entities/search';
 import { loadSpaces, SpaceIcon, useSpaces } from '@entities/space';
 import {
   consumeAnswerAutoStart,
+  readAnswerPointer,
   resetAnswerRun,
   restoreAnswerRun,
   startAnswerRun,
@@ -59,6 +60,27 @@ export function SearchPage() {
     startedRef.current = answerId;
     void restoreAnswerRun(answerId);
   }, [answerId]);
+
+  // Восстановление ответа после ухода со страницы (sessionStorage + URL)
+  useEffect(() => {
+    if (answerId) return;
+    const pointer = readAnswerPointer();
+    if (!pointer) return;
+    const q = urlQuery.trim();
+    if (q && q !== pointer.question.trim()) return;
+    startedRef.current = pointer.answerId;
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('answer', pointer.answerId);
+        if (!next.get('q') && pointer.question) next.set('q', pointer.question);
+        return next;
+      },
+      { replace: true },
+    );
+    void restoreAnswerRun(pointer.answerId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (answerId) return;
@@ -150,7 +172,8 @@ export function SearchPage() {
 
   const commitSearch = (value = query) => {
     setSuggestOpen(false);
-    updateParams({ q: value, answer: null });
+    // answer сохраняем, если запрос совпадает с текущим AnswerRun
+    updateParams({ q: value });
   };
 
   const suggestItems = suggestions.items;
@@ -283,7 +306,7 @@ export function SearchPage() {
         )}
 
         <div className={styles.workspace}>
-          {(state.status !== 'idle' || answerPhase !== 'idle') && (
+          {(query.trim().length >= 2 || answerPhase !== 'idle') && (
             <AnswerPanel
               query={query}
               spaceIds={spaceIds}

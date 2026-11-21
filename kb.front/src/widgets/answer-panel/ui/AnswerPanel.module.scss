@@ -205,34 +205,6 @@
   margin-top: var(--space-3);
 }
 
-.preview {
-  padding: var(--space-3);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-}
-
-.previewTitle {
-  font: var(--text-subtitle);
-}
-
-.previewExcerpt {
-  margin-top: var(--space-2);
-  max-height: 120px;
-  overflow: hidden;
-}
-
-.previewLink {
-  display: inline-block;
-  margin-top: var(--space-3);
-  font: var(--text-caption);
-  color: var(--color-info);
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
 .divider {
   margin: var(--space-6) 0 0;
   border: 0;

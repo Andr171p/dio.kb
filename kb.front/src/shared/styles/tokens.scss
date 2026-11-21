@@ -1,14 +1,15 @@
 // Семантические токены DIOS Knowledge. Имена одинаковые для тёмной и светлой темы.
 
 :root {
-  // Интерфейс, заголовки, метаданные и код — JetBrains Mono; длинный текст статей — Inter
-  --font-mono:
-    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular,
-    Menlo, Consolas, monospace;
+  // Интерфейс, заголовки, метаданные — Onest; длинный текст статей — Inter; код — системный mono
+  --font-ui:
+    'Onest Variable', Onest, system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
   --font-text:
     'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto,
     sans-serif;
-  --font-ui: var(--font-mono);
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
   // Типографика интерфейса
   --text-display: 600 30px/38px var(--font-ui);

@@ -7,31 +7,12 @@ import styles from './AnswerCitation.module.scss';
 interface AnswerCitationProps {
   index: number;
   source: AnswerSource | undefined;
-  onPreview?: (source: AnswerSource) => void;
 }
 
-/** Компактная ссылка на источник — без красного акцента. */
-export function AnswerCitation({
-  index,
-  source,
-  onPreview,
-}: AnswerCitationProps) {
+/** Превью-ссылка на источник прямо в тексте ответа. */
+export function AnswerCitation({ index, source }: AnswerCitationProps) {
   if (!source) {
     return <span className={styles.unknown}>[{index}]</span>;
-  }
-
-  if (onPreview) {
-    return (
-      <button
-        type="button"
-        className={styles.citation}
-        title={source.title}
-        aria-label={`Источник ${index}: ${source.title}`}
-        onClick={() => onPreview(source)}
-      >
-        <Link2 size={10} aria-hidden />
-      </button>
-    );
   }
 
   return (
@@ -42,6 +23,7 @@ export function AnswerCitation({
       aria-label={`Источник ${index}: ${source.title}`}
     >
       <Link2 size={10} aria-hidden />
+      <span className={styles.label}>{source.title}</span>
     </Link>
   );
 }
